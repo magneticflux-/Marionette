@@ -3,6 +3,8 @@
 	<name>Marionette</name>
 	<comment></comment>
 	<projects>
+		<project>Java-NEAT</project>
+		<project>halfnes-headless</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
