@@ -2,72 +2,55 @@ package com.marionette.evolver.supermariobros;
 
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
-import java.util.List;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 
 import org.apache.commons.math3.util.FastMath;
-import org.uncommons.watchmaker.framework.FitnessEvaluator;
 
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Input;
 import com.grapeshot.halfnes.CPURAM;
 import com.grapeshot.halfnes.NES;
 import com.grapeshot.halfnes.ui.GUIImpl;
-import com.javaneat.genome.ConnectionGene;
 import com.javaneat.genome.NEATGenome;
 import com.javaneat.phenome.NEATPhenome;
 
-public class SuperMarioBrosFitness implements FitnessEvaluator<NEATGenome>
+public class Playback
 {
-	public static double[] unwind2DArray(int[][] arr)
+	public static void main(String[] args) throws InterruptedException
 	{
-		double[] out = new double[arr.length * arr[0].length];
-		int i = 0;
-		for (int x = 0; x < arr[0].length; x++)
-		{
-			for (int y = 0; y < arr.length; y++)
-			{
-				out[i] = arr[y][x];
-				i++;
-			}
-		}
-		return out;
-	}
+		Kryo kryo = new Kryo();
 
-	private ThreadLocal<NES>	nes	= new ThreadLocal<NES>();
-
-	@Override
-	public double getFitness(NEATGenome candidate, List<? extends NEATGenome> population)
-	{
-		// long startTime = System.nanoTime();
-
-		boolean movesRight = false; // Throw out ones that don't move right or jump before testing starts
-		boolean jumps = false;
-		for (ConnectionGene gene : candidate.getConnectionGeneList())
+		NEATGenome candidate = null;
+		int generation = 0;
+		for (int i = 207; i < 208;i++)
 		{
-			if (gene.getToNode() == candidate.getManager().getOutputOffset() + 3)
+			Input in = null;
+			try
 			{
-				movesRight = true;
-				if (jumps) break;
+				in = new Input(new FileInputStream("saves/supermariobros/generation_" + i + ".pop"));
 			}
-			if (gene.getToNode() == candidate.getManager().getOutputOffset() + 4)
+			catch (final FileNotFoundException e1)
 			{
-				jumps = true;
-				if (movesRight) break;
+				e1.printStackTrace();
 			}
+			NEATGenome temp = ((NEATGenome) kryo.readClassAndObject(in));
+			if (candidate == null
+					|| (temp.getScore() + temp.getConnectionGeneList().size() * 2) > (candidate.getScore() + candidate.getConnectionGeneList().size() * 2))
+			{
+				candidate = temp;
+				generation = i;
+			}
+			in.close();
+
 		}
-		if (!(movesRight && jumps))
-		{
-			// System.out.println("Candidate could not walk or jump. Terminating...");
-			candidate.setScore(20 - candidate.getConnectionGeneList().size() * 2);
-			return candidate.getScore();
-		}
+		System.out.println("Running generation " + generation + " with a total score of "
+				+ (candidate.getScore() + candidate.getConnectionGeneList().size() * 2));
 
 		NEATPhenome network = new NEATPhenome(candidate);
-		if (nes.get() == null)
-		{
-			nes.set(new NES(true));
-			nes.get().loadROM("C:\\Users\\Mitchell\\Desktop\\fceux-2.2.2-win32\\ROMs\\Super Mario Bros..nes");
-		}
-		NES nes = this.nes.get();
+		NES nes = new NES(false);
 		nes.reset();
+		nes.loadROM("C:\\Users\\Mitchell\\Desktop\\fceux-2.2.2-win32\\ROMs\\Super Mario Bros..nes");
 		// NESFitnessEvaluator.loadSavestate(nes);
 
 		final GUIImpl gui = ((GUIImpl) nes.getGUI());
@@ -102,6 +85,8 @@ public class SuperMarioBrosFitness implements FitnessEvaluator<NEATGenome>
 
 		while (true)
 		{
+			Thread.sleep(5);
+			long startTime1 = System.nanoTime();
 			input.keyReleased(U);
 			input.keyReleased(D);
 			input.keyReleased(L);
@@ -126,7 +111,10 @@ public class SuperMarioBrosFitness implements FitnessEvaluator<NEATGenome>
 			for (int i = 0x07F8; i <= 0x07FA; i++)
 				time += cpuram._read(i) * FastMath.pow(10, (0x07FA - i));
 
-			int points = ((time - 400) * 10) + (marioX) + (level * 250) + (world * 2000);
+			int points = ((time - 400) * 10) + (marioX / 2) + (level * 250) + (world * 2000);
+			System.out.println(String.format("Points: %d, Time: %d, Score: %d, World: %d, Level: %d, Lives: %d, MarioX: %d, MarioY: %d"
+					+ (nes.getCPURAM().read(0x000E) == 0x0B ? ", DYING" : ", STATE: " + nes.getCPURAM().read(0x000E)), points, time, score, world, level,
+					lives, marioX, marioY));
 
 			timeout++;
 			if (marioX > maxDistance)
@@ -135,18 +123,13 @@ public class SuperMarioBrosFitness implements FitnessEvaluator<NEATGenome>
 				timeout = 0;
 			}
 			// System.out.println("Lives: " + lives + " Timeout: " + timeout + " Distance: " + marioX);
-			if (lives <= 2 || timeout > 30 + (marioX / 250) || marioState == 0x0B)
+			if (lives <= 2 || timeout > 60 || marioState == 0x0B)
 			{
 				fitness = points;
-				if (!(marioState == 0 || marioState == 4 || marioState == 5 || marioState == 7))
-				{
-					break;
-				}
-				else
-				{
-					timeout = 0;
-				}
+				break;
 			}
+
+			// System.out.println("Timeout: " + timeout + ", Time: " + time);
 
 			final int[][] vision = new int[13][13];
 
@@ -166,7 +149,7 @@ public class SuperMarioBrosFitness implements FitnessEvaluator<NEATGenome>
 					}
 					else
 					{
-						// System.out.println("Block data at " + dx + ", " + dy + ": " + nes.cpuram.read(addr));
+						// System.out.println("Block data at " + dx + ", " + dy + ": " + cpuram.read(addr));
 						vision[dy + (vision.length / 2)][dx + (vision[0].length / 2)] = cpuram.read(addr) == 0 ? 0 : 1;
 					}
 				}
@@ -202,19 +185,30 @@ public class SuperMarioBrosFitness implements FitnessEvaluator<NEATGenome>
 			// if (reactions[6] > 0) input.keyPressed(SELECT);
 			// if (reactions[7] > 0) input.keyPressed(START);
 
+			long startTime2 = System.nanoTime();
 			nes.frameAdvance();
+			// System.out.println("Took " + (System.nanoTime() - startTime2) / 1000000f + " ms to compute the NES, took " + (System.nanoTime() - startTime1)
+			// / 1000000f + "ms total.");
 		}
-		fitness -= candidate.getConnectionGeneList().size() * 2;
+		// fitness -= candidate.getConnectionGeneList().size() * 100;
+		// fitness -= 5400; // The approximate minimum
 		// System.out.println("Finished one evaluation that took " + (System.nanoTime() - startTime) / 1000000000f + " seconds.");
-		fitness = fitness >= 0 ? fitness : 0;
-
-		candidate.setScore(fitness);
-		return candidate.getScore();
+		// fitness = fitness >= 0 ? fitness : 0;
+		//System.exit(0);
 	}
 
-	@Override
-	public boolean isNatural()
+	public static double[] unwind2DArray(int[][] arr)
 	{
-		return true;
+		double[] out = new double[arr.length * arr[0].length];
+		int i = 0;
+		for (int x = 0; x < arr[0].length; x++)
+		{
+			for (int y = 0; y < arr.length; y++)
+			{
+				out[i] = arr[y][x];
+				i++;
+			}
+		}
+		return out;
 	}
 }

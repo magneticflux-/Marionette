@@ -7,14 +7,12 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.util.List;
 import java.util.Random;
 
 import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 
-import org.apache.commons.math3.util.FastMath;
 import org.uncommons.maths.random.Probability;
 import org.uncommons.watchmaker.framework.CandidateFactory;
 import org.uncommons.watchmaker.framework.EvolutionObserver;
@@ -48,21 +46,26 @@ public class Run
 		final int numInputs = 169;
 		final int numOutputs = 6;
 		final int populationSize = 400;
-		final double eliteFraction = 0.1;
+		// final double eliteFraction = 0.1; // Broken at the moment
 		final double disjointGeneCoefficient = 2;
 		final double excessGeneCoefficient = 2;
 		final double weightDifferenceCoefficient = 1;
 		final int speciesTarget = 20;
-		final int speciesStagnantTimeLimit = 500;
-		final double speciesCutoff = 5;
+		final int speciesStagnantTimeLimit = 25;
+		final double speciesCutoff = 10;
 		final double speciesCutoffDelta = 0.5;
-		final double mutationWeightProb = 0.85;
-		final double mutationAddLinkProb = 0.3;
-		final double mutationAddNodeProb = 0.3;
-		final double mutationWeightRange = 1;
+		final double enableMutationProb = 0.2;
+		final double disableMutationProb = 0.4;
+		final double mutationWeightWholeProb = 0.25;
+		final double mutationWeightProb = 0.9;
+		final double mutationAddLinkProb = 0.9;
+		final double mutationRemoveLinkProb = 0.9;
+		final double mutationAddNodeProb = 0.5;
+		final double mutationWeightRange = 0.1;
+		final double crossoverChance = 0.75;
 		NEATGenomeManager manager = new NEATGenomeManager(numInputs, numOutputs, disjointGeneCoefficient, excessGeneCoefficient, weightDifferenceCoefficient,
-				speciesTarget, speciesCutoff, speciesCutoffDelta, populationSize, speciesStagnantTimeLimit, mutationWeightProb, mutationAddLinkProb,
-				mutationAddNodeProb, mutationWeightRange);
+				speciesTarget, speciesCutoff, speciesCutoffDelta, populationSize, speciesStagnantTimeLimit, mutationWeightWholeProb, mutationWeightProb,
+				mutationAddLinkProb, mutationAddNodeProb, mutationWeightRange, enableMutationProb, disableMutationProb, crossoverChance, mutationRemoveLinkProb);
 
 		CandidateFactory<NEATGenome> candidateFactory = new NEATGenotypeFactory(manager);
 		EvolutionaryOperator<NEATGenome> evolutionScheme = new NEATEvolutionaryOperator(manager);
@@ -76,7 +79,7 @@ public class Run
 
 			public void populationUpdate(PopulationData<? extends NEATGenome> data)
 			{
-				try (Output output = new Output(new FileOutputStream("NEAT-Mario/" + "generation_" + data.getGenerationNumber() + ".pop"));)
+				try (Output output = new Output(new FileOutputStream("saves/supermariobros/" + "generation_" + data.getGenerationNumber() + ".pop"));)
 				{
 					kryo.writeClassAndObject(output, data.getBestCandidate());
 				}
@@ -136,7 +139,7 @@ public class Run
 		monitor.showInFrame("Evolution", true);
 		ge.addEvolutionObserver(monitor);
 
-		final NEATGenome result = ge.evolve(populationSize, (int) FastMath.round(populationSize * eliteFraction), abort);
+		final NEATGenome result = ge.evolve(populationSize, 0, abort);
 		System.out.println("Fittest individual: " + result);
 		new NEATPhenome(result);
 	}
