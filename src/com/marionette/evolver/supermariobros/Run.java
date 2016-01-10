@@ -1,31 +1,5 @@
 package com.marionette.evolver.supermariobros;
 
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.util.Random;
-
-import javax.swing.JButton;
-import javax.swing.JPanel;
-import javax.swing.JTabbedPane;
-
-import org.uncommons.maths.random.Probability;
-import org.uncommons.watchmaker.framework.CandidateFactory;
-import org.uncommons.watchmaker.framework.EvolutionObserver;
-import org.uncommons.watchmaker.framework.EvolutionaryOperator;
-import org.uncommons.watchmaker.framework.FitnessEvaluator;
-import org.uncommons.watchmaker.framework.GenerationalEvolutionEngine;
-import org.uncommons.watchmaker.framework.PopulationData;
-import org.uncommons.watchmaker.framework.SelectionStrategy;
-import org.uncommons.watchmaker.framework.selection.TournamentSelection;
-import org.uncommons.watchmaker.framework.termination.UserAbort;
-import org.uncommons.watchmaker.swing.ObjectSwingRenderer;
-import org.uncommons.watchmaker.swing.evolutionmonitor.EvolutionMonitor;
-
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.KryoException;
 import com.esotericsoftware.kryo.io.Output;
@@ -34,6 +8,18 @@ import com.javaneat.evolution.NEATGenomeManager;
 import com.javaneat.evolution.NEATGenotypeFactory;
 import com.javaneat.genome.NEATGenome;
 import com.javaneat.phenome.NEATPhenome;
+import org.uncommons.maths.random.Probability;
+import org.uncommons.watchmaker.framework.*;
+import org.uncommons.watchmaker.framework.selection.TournamentSelection;
+import org.uncommons.watchmaker.framework.termination.UserAbort;
+import org.uncommons.watchmaker.swing.ObjectSwingRenderer;
+import org.uncommons.watchmaker.swing.evolutionmonitor.EvolutionMonitor;
+
+import javax.swing.*;
+import java.awt.*;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.util.Random;
 
 public class Run
 {
@@ -71,7 +57,7 @@ public class Run
 		EvolutionaryOperator<NEATGenome> evolutionScheme = new NEATEvolutionaryOperator(manager);
 		FitnessEvaluator<NEATGenome> fitnessEvaluator = new SuperMarioBrosFitness();
 
-		GenerationalEvolutionEngine<NEATGenome> ge = new GenerationalEvolutionEngine<NEATGenome>(candidateFactory, evolutionScheme, fitnessEvaluator,
+		GenerationalEvolutionEngine<NEATGenome> ge = new GenerationalEvolutionEngine<>(candidateFactory, evolutionScheme, fitnessEvaluator,
 				selectionStrategy, rng);
 		ge.addEvolutionObserver(new EvolutionObserver<NEATGenome>()
 		{
@@ -79,7 +65,7 @@ public class Run
 
 			public void populationUpdate(PopulationData<? extends NEATGenome> data)
 			{
-				try (Output output = new Output(new FileOutputStream("saves/supermariobros/" + "generation_" + data.getGenerationNumber() + ".pop"));)
+				try (Output output = new Output(new FileOutputStream("saves/supermariobros/" + "generation_" + data.getGenerationNumber() + ".pop")))
 				{
 					kryo.writeClassAndObject(output, data.getBestCandidate());
 				}
@@ -103,7 +89,7 @@ public class Run
 		});
 
 		final UserAbort abort = new UserAbort();
-		final EvolutionMonitor<NEATGenome> monitor = new EvolutionMonitor<NEATGenome>(new ObjectSwingRenderer(), false);
+		final EvolutionMonitor<NEATGenome> monitor = new EvolutionMonitor<>(new ObjectSwingRenderer(), false);
 		synchronized (monitor.getGUIComponent().getTreeLock())
 		{
 			((JTabbedPane) monitor.getGUIComponent().getComponents()[0]).add(new JPanel()
@@ -122,14 +108,9 @@ public class Run
 							this.setMaximumSize(new Dimension(100, 50));
 							this.setPreferredSize(new Dimension(100, 50));
 
-							this.addActionListener(new ActionListener()
-							{
-								@Override
-								public void actionPerformed(final ActionEvent e)
-								{
-									abort.abort();
-									System.out.println("*** ABORT SEQUENCE ACTIVATED ***");
-								}
+							this.addActionListener(e -> {
+								abort.abort();
+								System.out.println("*** ABORT SEQUENCE ACTIVATED ***");
 							});
 						}
 					}, BorderLayout.PAGE_START);
