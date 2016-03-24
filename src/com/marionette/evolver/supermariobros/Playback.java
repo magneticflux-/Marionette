@@ -6,10 +6,9 @@ import com.grapeshot.halfnes.CPURAM;
 import com.grapeshot.halfnes.NES;
 import com.grapeshot.halfnes.ui.HeadlessUI;
 import com.grapeshot.halfnes.ui.PuppetController;
-import com.javaneat.genome.NEATGenome;
-import com.javaneat.phenome.NEATPhenome;
-
 import org.apache.commons.math3.util.FastMath;
+import org.javaneat.genome.NEATGenome;
+import org.javaneat.phenome.NEATPhenome;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;

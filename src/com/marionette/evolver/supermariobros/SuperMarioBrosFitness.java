@@ -4,11 +4,10 @@ import com.grapeshot.halfnes.CPURAM;
 import com.grapeshot.halfnes.NES;
 import com.grapeshot.halfnes.ui.HeadlessUI;
 import com.grapeshot.halfnes.ui.PuppetController;
-import com.javaneat.genome.ConnectionGene;
-import com.javaneat.genome.NEATGenome;
-import com.javaneat.phenome.NEATPhenome;
-
 import org.apache.commons.math3.util.FastMath;
+import org.javaneat.genome.ConnectionGene;
+import org.javaneat.genome.NEATGenome;
+import org.javaneat.phenome.NEATPhenome;
 import org.uncommons.watchmaker.framework.FitnessEvaluator;
 
 import java.util.List;
@@ -16,6 +15,18 @@ import java.util.List;
 public class SuperMarioBrosFitness implements FitnessEvaluator<NEATGenome> {
     private ThreadLocal<NES> nes = new ThreadLocal<>();
     private ThreadLocal<HeadlessUI> ui = new ThreadLocal<>();
+
+    public static double[] unwind2DArray(int[][] arr) {
+        double[] out = new double[arr.length * arr[0].length];
+        int i = 0;
+        for (int x = 0; x < arr[0].length; x++) {
+            for (int[] anArr : arr) {
+                out[i] = anArr[x];
+                i++;
+            }
+        }
+        return out;
+    }
 
     @SuppressWarnings("MagicNumber")
     @Override
@@ -156,18 +167,6 @@ public class SuperMarioBrosFitness implements FitnessEvaluator<NEATGenome> {
 
         candidate.setScore(fitness);
         return candidate.getScore();
-    }
-
-    public static double[] unwind2DArray(int[][] arr) {
-        double[] out = new double[arr.length * arr[0].length];
-        int i = 0;
-        for (int x = 0; x < arr[0].length; x++) {
-            for (int[] anArr : arr) {
-                out[i] = anArr[x];
-                i++;
-            }
-        }
-        return out;
     }
 
     @Override
