@@ -1,131 +1,205 @@
 package com.marionette.evolver.supermariobros;
 
-import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.KryoException;
-import com.esotericsoftware.kryo.io.Output;
-import org.javaneat.evolution.NEATEvolutionaryOperator;
+import com.grapeshot.halfnes.CPURAM;
+import com.grapeshot.halfnes.NES;
+import com.grapeshot.halfnes.ui.HeadlessUI;
+import com.grapeshot.halfnes.ui.PuppetController;
+import org.apache.commons.math3.util.FastMath;
 import org.javaneat.evolution.NEATGenomeManager;
-import org.javaneat.evolution.NEATGenotypeFactory;
+import org.javaneat.evolution.RunDemo;
+import org.javaneat.evolution.nsgaii.MarioBrosData;
+import org.javaneat.evolution.nsgaii.NEATPopulationGenerator;
+import org.javaneat.evolution.nsgaii.NEATRecombiner;
+import org.javaneat.evolution.nsgaii.NEATSpeciator;
+import org.javaneat.evolution.nsgaii.mutators.*;
 import org.javaneat.genome.NEATGenome;
 import org.javaneat.phenome.NEATPhenome;
-import org.uncommons.maths.random.Probability;
-import org.uncommons.watchmaker.framework.*;
-import org.uncommons.watchmaker.framework.selection.TournamentSelection;
-import org.uncommons.watchmaker.framework.termination.UserAbort;
-import org.uncommons.watchmaker.swing.ObjectSwingRenderer;
-import org.uncommons.watchmaker.swing.evolutionmonitor.EvolutionMonitor;
+import org.jnsgaii.OptimizationFunction;
+import org.jnsgaii.examples.defaultoperatorframework.RouletteWheelLinearSelection;
+import org.jnsgaii.multiobjective.NSGA_II;
+import org.jnsgaii.operators.*;
+import org.jnsgaii.population.individual.Individual;
+import org.jnsgaii.properties.Key;
+import org.jnsgaii.properties.Properties;
 
-import javax.swing.JButton;
-import javax.swing.JPanel;
-import javax.swing.JTabbedPane;
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Dimension;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.util.Random;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
 
-public class Run
-{
-	public static void main(String[] args)
-	{
-		SelectionStrategy<Object> selectionStrategy = new TournamentSelection(Probability.ONE);
-		final Kryo kryo = new Kryo();
-		Random rng = new Random(0);
+/**
+ * Created by Mitchell on 3/13/2016.
+ */
+public final class Run {
+    private static final ThreadLocal<NES> nes = new ThreadLocal<>();
+    private static final ThreadLocal<HeadlessUI> ui = new ThreadLocal<>();
 
-		final int numInputs = 169;
-		final int numOutputs = 6;
-		final int populationSize = 400;
-		// final double eliteFraction = 0.1; // Broken at the moment
-		final double disjointGeneCoefficient = 2;
-		final double excessGeneCoefficient = 2;
-		final double weightDifferenceCoefficient = 1;
-		final int speciesTarget = 20;
-		final int speciesStagnantTimeLimit = 25;
-		final double speciesCutoff = 10;
-		final double speciesCutoffDelta = 0.5;
-		final double enableMutationProb = 0.2;
-		final double disableMutationProb = 0.4;
-		final double mutationWeightWholeProb = 0.25;
-		final double mutationWeightProb = 0.9;
-		final double mutationAddLinkProb = 0.9;
-		final double mutationRemoveLinkProb = 0.9;
-		final double mutationAddNodeProb = 0.5;
-		final double mutationWeightRange = 0.1;
-		final double crossoverChance = 0.75;
-		NEATGenomeManager manager = new NEATGenomeManager(numInputs, numOutputs, disjointGeneCoefficient, excessGeneCoefficient, weightDifferenceCoefficient,
-				speciesTarget, speciesCutoff, speciesCutoffDelta, populationSize, speciesStagnantTimeLimit, mutationWeightWholeProb, mutationWeightProb,
-				mutationAddLinkProb, mutationAddNodeProb, mutationWeightRange, enableMutationProb, disableMutationProb, crossoverChance, mutationRemoveLinkProb);
+    private Run() {
+    }
 
-		CandidateFactory<NEATGenome> candidateFactory = new NEATGenotypeFactory(manager);
-		EvolutionaryOperator<NEATGenome> evolutionScheme = new NEATEvolutionaryOperator(manager);
-		FitnessEvaluator<NEATGenome> fitnessEvaluator = new SuperMarioBrosFitness();
+    public static void main(String[] args) {
+        NEATGenomeManager neatGenomeManager = new NEATGenomeManager();
 
-		GenerationalEvolutionEngine<NEATGenome> ge = new GenerationalEvolutionEngine<>(candidateFactory, evolutionScheme, fitnessEvaluator,
-				selectionStrategy, rng);
-		ge.addEvolutionObserver(new EvolutionObserver<NEATGenome>()
-		{
-			private long	startTime	= System.nanoTime();
+        Properties properties = new Properties()
+                .setValue(Key.DoubleKey.DefaultDoubleKey.INITIAL_ASPECT_ARRAY, new double[]{0, 0, 0, 0});
 
-			public void populationUpdate(PopulationData<? extends NEATGenome> data)
-			{
-				try (Output output = new Output(new FileOutputStream("saves/supermariobros/" + "generation_" + data.getGenerationNumber() + ".pop")))
-				{
-					kryo.writeClassAndObject(output, data.getBestCandidate());
-				}
-				catch (KryoException | FileNotFoundException e)
-				{
-					e.printStackTrace();
-				}
+        NEATPopulationGenerator neatPopulationGenerator = new NEATPopulationGenerator(neatGenomeManager);
 
-				System.out.printf("Generation %d: %s\n", data.getGenerationNumber(), data.getBestCandidate());
-				System.out.println("Max fitness: " + data.getBestCandidateFitness());
-				System.out.println("Time taken: " + (System.nanoTime() - startTime) / 1000000000f + " seconds");
-				startTime = System.nanoTime();
-				if (!Double.isFinite(data.getBestCandidateFitness()))
-				{
-					System.err.println("Fitness was infinite.");
-					System.err.println("Genome: " + data.getBestCandidate());
-					System.err.println("Species: " + data.getBestCandidate().getSpecies());
-					System.exit(0);
-				}
-			}
-		});
+        NEATSpeciator neatSpeciator = new NEATSpeciator();
+        List<Mutator<NEATGenome>> mutators = Arrays.asList(new NEATWeightMutator(), new NEATLinkAdditionMutator(), new NEATLinkRemovalMutator(), new NEATLinkSplitMutator(), new NEATEnableGeneMutator(), new NEATDisableGeneMutator());
+        Recombiner<NEATGenome> recombiner = new NEATRecombiner();
+        Selector<NEATGenome> selector = new RouletteWheelLinearSelection<>();
+        Operator<NEATGenome> operator = new DefaultOperator<>(mutators, recombiner, selector, neatSpeciator);
 
-		final UserAbort abort = new UserAbort();
-		final EvolutionMonitor<NEATGenome> monitor = new EvolutionMonitor<>(new ObjectSwingRenderer(), false);
-		synchronized (monitor.getGUIComponent().getTreeLock())
-		{
-			((JTabbedPane) monitor.getGUIComponent().getComponents()[0]).add(new JPanel()
-			{
-				private static final long	serialVersionUID	= 1L;
+        List<OptimizationFunction<NEATGenome>> optimizationFunctions = Arrays.asList();
 
-				{
-					this.setName("Abort Button");
-					this.setLayout(new BorderLayout());
-					this.add(new JButton("ABORT")
-					{
-						private static final long	serialVersionUID	= 1L;
+        NSGA_II<NEATGenome> nsga_ii = new NSGA_II<>(properties, operator, optimizationFunctions, neatPopulationGenerator);
+    }
 
-						{
-							this.setBackground(Color.RED);
-							this.setMaximumSize(new Dimension(100, 50));
-							this.setPreferredSize(new Dimension(100, 50));
+    @SuppressWarnings("MagicNumber")
+    public static void computeFitness(NEATGenome candidate) {
 
-							this.addActionListener(e -> {
-								abort.abort();
-								System.out.println("*** ABORT SEQUENCE ACTIVATED ***");
-							});
-						}
-					}, BorderLayout.PAGE_START);
-				}
-			});
-		}
-		monitor.showInFrame("Evolution", true);
-		ge.addEvolutionObserver(monitor);
+        final NEATPhenome network = new NEATPhenome(candidate);
+        if (nes.get() == null || ui.get() == null) {
+            ui.set(new HeadlessUI("C:\\Users\\Mitchell\\Desktop\\fceux-2.2.2-win32\\ROMs\\Super Mario Bros..nes", false));
+            nes.set(new NES(ui.get()));
+        }
+        final NES nes = Run.nes.get();
+        final HeadlessUI ui = Run.ui.get();
+        nes.reset();
 
-		final NEATGenome result = ge.evolve(populationSize, 0, abort);
-		System.out.println("Fittest individual: " + result);
-		new NEATPhenome(result);
-	}
+        CPURAM cpuram;
+        PuppetController controller1 = (PuppetController) nes.getcontroller1();
+
+        for (int i = 0; i < 31; i++)
+            // Exact frame number until it can begin.
+            ui.runFrame();
+
+        controller1.pressButton(PuppetController.Button.START);
+        ui.runFrame();
+        controller1.releaseButton(PuppetController.Button.START);
+
+        for (int i = 0; i < 162; i++)
+            // Exact frame number until Mario gains control
+            ui.runFrame();
+
+        int maxDistance = 0;
+        int timeout = 0;
+        int currentFrame = 0;
+
+        MarioBrosData data = new MarioBrosData();
+
+        while (true) {
+            controller1.resetButtons();
+
+            cpuram = ui.getNESCPURAM();
+
+            int score = 0;
+            int time = 0;
+            byte world = (byte) cpuram.read(0x075F);
+            byte level = (byte) cpuram.read(0x0760);
+            byte lives = (byte) (cpuram.read(0x075A) + 1);
+            int marioX = cpuram.read(0x6D) * 0x100 + cpuram.read(0x86);
+            int marioY = cpuram.read(0x03B8) + 16;
+            int marioState = cpuram.read(0x000E);
+            for (int i = 0x07DD; i <= 0x07E2; i++)
+                score += cpuram._read(i) * FastMath.pow(10, (0x07E2 - i + 1));
+            for (int i = 0x07F8; i <= 0x07FA; i++)
+                time += cpuram._read(i) * FastMath.pow(10, (0x07FA - i));
+
+            if (currentFrame % 30 == 0) {
+                data.addDataPoint(new MarioBrosData.DataPoint(score, time, world, level, lives, marioX, marioY, marioState));
+            }
+
+            currentFrame++;
+            timeout++;
+            if (marioX > maxDistance) {
+                maxDistance = marioX;
+                timeout = 0;
+            }
+            if (lives <= 2 || timeout > 120 || marioState == 0x0B) {
+                break;
+            }
+
+            final int[][] vision = new int[13][13];
+
+            for (int dx = -vision[0].length / 2; dx < vision[0].length / 2; dx += 1)
+                for (int dy = -vision.length / 2; dy < vision.length / 2; dy += 1) {
+                    int x = marioX + (dx * 16) + 8;
+                    int y = marioY + (dy * 16) - 16;
+                    int page = (int) FastMath.floor(x / 256) % 2;
+                    int subx = (int) FastMath.floor((x % 256) / 16);
+                    int suby = (int) FastMath.floor((y - 32) / 16);
+                    int addr = 0x500 + page * 13 * 16 + suby * 16 + subx;
+                    if (suby >= 13 || suby < 0) {
+                        // System.out.println("Outside level.");
+                        vision[dy + (vision.length / 2)][dx + (vision[0].length / 2)] = 0;
+                    } else {
+                        // System.out.println("Block data at " + dx + ", " + dy + ": " + nes.cpuram.read(addr));
+                        vision[dy + (vision.length / 2)][dx + (vision[0].length / 2)] = cpuram.read(addr);
+                    }
+                }
+
+            for (int i = 0; i <= 4; i++) {
+                int enemy = cpuram.read(0xF + i);
+                if (enemy != 0) {
+                    int ex = cpuram.read(0x6E + i) * 0x100 + cpuram.read(0x87 + i);
+                    int ey = cpuram.read(0xCF + i) + 24;
+                    int enemyMarioDeltaX = (ex - marioX) / 16;
+                    int enemyMarioDeltaY = (ey - marioY) / 16;
+                    try {
+                        vision[enemyMarioDeltaY + (vision.length / 2)][enemyMarioDeltaX + (vision[0].length / 2)] = -enemy;
+                    } catch (ArrayIndexOutOfBoundsException ignored) {
+                    }
+                }
+            }
+
+            double[] visionUnwound = RunDemo.NESFitness.unwind2DArray(vision);
+            double[] reactions = network.stepTime(visionUnwound);
+
+            if (reactions[0] > 0) controller1.pressButton(PuppetController.Button.UP);
+            if (reactions[1] > 0) controller1.pressButton(PuppetController.Button.DOWN);
+            if (reactions[2] > 0) controller1.pressButton(PuppetController.Button.LEFT);
+            if (reactions[3] > 0) controller1.pressButton(PuppetController.Button.RIGHT);
+            if (reactions[4] > 0) controller1.pressButton(PuppetController.Button.A);
+            if (reactions[5] > 0) controller1.pressButton(PuppetController.Button.B);
+            // if (reactions[6] > 0) input.keyPressed(SELECT);
+            // if (reactions[7] > 0) input.keyPressed(START);
+
+            nes.frameAdvance();
+        }
+        candidate.marioBrosData = data;
+    }
+
+    public static void verifyScores(Collection<Individual<NEATGenome>> individuals) {
+        individuals.parallelStream().filter(neatGenomeIndividual -> neatGenomeIndividual.getIndividual().marioBrosData == null).forEach(neatGenomeIndividual -> computeFitness(neatGenomeIndividual.getIndividual()));
+    }
+
+    public static double getDistance(MarioBrosData data1, MarioBrosData data2) {
+        double sum = 0;
+
+        MarioBrosData.DataPoint dataPoint1 = null, dataPoint2 = null;
+        Iterator<MarioBrosData.DataPoint> dataPointIterator1 = data1.dataPoints.iterator(), dataPointIterator2 = data2.dataPoints.iterator();
+
+        while (dataPointIterator1.hasNext() || dataPointIterator2.hasNext()) {
+            if (dataPointIterator1.hasNext())
+                dataPoint1 = dataPointIterator1.next();
+            if (dataPointIterator2.hasNext())
+                dataPoint2 = dataPointIterator2.next();
+
+            assert dataPoint1 != null && dataPoint2 != null;
+
+            sum += FastMath.pow(dataPoint1.score - dataPoint2.score, 2);
+            sum += FastMath.pow(dataPoint1.time - dataPoint2.time, 2);
+            sum += FastMath.pow(dataPoint1.world - dataPoint2.world, 2);
+            sum += FastMath.pow(dataPoint1.level - dataPoint2.level, 2);
+            sum += FastMath.pow(dataPoint1.lives - dataPoint2.lives, 2);
+            sum += FastMath.pow(dataPoint1.marioX - dataPoint2.marioX, 2);
+            sum += FastMath.pow(dataPoint1.marioY - dataPoint2.marioY, 2);
+            sum += FastMath.pow(dataPoint1.marioState - dataPoint2.marioState, 2);
+        }
+
+        return FastMath.sqrt(sum);
+    }
+
 }

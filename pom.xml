@@ -40,7 +40,7 @@
 		<dependency>
 			<groupId>com.google.guava</groupId>
 			<artifactId>guava</artifactId>
-			<version>18.0</version>
+			<version>19.0</version>
 		</dependency>
 		<dependency>
 			<groupId>org.uncommons.watchmaker</groupId>
@@ -61,6 +61,16 @@
 			<groupId>Java-NEAT</groupId>
 			<artifactId>Java-NEAT</artifactId>
 			<version>0.0.1-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.lucene</groupId>
+			<artifactId>lucene-core</artifactId>
+			<version>5.5.0</version>
+		</dependency>
+		<dependency>
+			<groupId>com.grapeshot</groupId>
+			<artifactId>halfnes</artifactId>
+			<version>062-dev</version>
 		</dependency>
 	</dependencies>
 </project>
