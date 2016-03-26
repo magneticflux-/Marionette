@@ -1,9 +1,15 @@
 package com.marionette.evolver.supermariobros;
 
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Output;
 import com.grapeshot.halfnes.CPURAM;
 import com.grapeshot.halfnes.NES;
 import com.grapeshot.halfnes.ui.HeadlessUI;
 import com.grapeshot.halfnes.ui.PuppetController;
+import com.marionette.evolver.supermariobros.optimizationfunctions.NEATPhenomeSizeFunction;
+import com.marionette.evolver.supermariobros.optimizationfunctions.SMBDistanceFunction;
+import com.marionette.evolver.supermariobros.optimizationfunctions.SMBNoveltySearch;
+import com.marionette.evolver.supermariobros.optimizationfunctions.SMBScoreFunction;
 import org.apache.commons.math3.util.FastMath;
 import org.javaneat.evolution.NEATGenomeManager;
 import org.javaneat.evolution.RunDemo;
@@ -11,21 +17,26 @@ import org.javaneat.evolution.nsgaii.MarioBrosData;
 import org.javaneat.evolution.nsgaii.NEATPopulationGenerator;
 import org.javaneat.evolution.nsgaii.NEATRecombiner;
 import org.javaneat.evolution.nsgaii.NEATSpeciator;
+import org.javaneat.evolution.nsgaii.keys.NEATDoubleKey;
+import org.javaneat.evolution.nsgaii.keys.NEATIntKey;
 import org.javaneat.evolution.nsgaii.mutators.*;
 import org.javaneat.genome.NEATGenome;
 import org.javaneat.phenome.NEATPhenome;
 import org.jnsgaii.OptimizationFunction;
 import org.jnsgaii.examples.defaultoperatorframework.RouletteWheelLinearSelection;
 import org.jnsgaii.multiobjective.NSGA_II;
+import org.jnsgaii.multiobjective.population.FrontedIndividual;
 import org.jnsgaii.operators.*;
 import org.jnsgaii.population.individual.Individual;
 import org.jnsgaii.properties.Key;
 import org.jnsgaii.properties.Properties;
 
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
+import java.util.function.ToDoubleFunction;
 
 /**
  * Created by Mitchell on 3/13/2016.
@@ -40,8 +51,43 @@ public final class Run {
     public static void main(String[] args) {
         NEATGenomeManager neatGenomeManager = new NEATGenomeManager();
 
+        //noinspection MagicNumber
         Properties properties = new Properties()
-                .setValue(Key.DoubleKey.DefaultDoubleKey.INITIAL_ASPECT_ARRAY, new double[]{0, 0, 0, 0});
+                .setValue(Key.DoubleKey.DefaultDoubleKey.INITIAL_ASPECT_ARRAY, new double[]{
+                        0, 1, // Crossover
+                        5, 1, 1, // Speciator maxd/disj/exce
+                        0, 1, // Weight mutation
+                        0, .3, // Link addition
+                        0, 0, // Link removal
+                        0, .15, // Link split
+                        0, .1, // Gene enable
+                        0, 0, // Gene disable
+                })
+                .setValue(Key.DoubleKey.DefaultDoubleKey.ASPECT_MODIFICATION_ARRAY, new double[]{
+                        .125 / 8, 1, // Crossover STR
+                        .125 / 8, 1, // Crossover PROB
+                        .125 / 8, 1, // Speciator MAX MATING DISTANCE
+                        .125 / 8, 1, // Speciator DISJOINT COEFFICIENT
+                        .125 / 8, 1, // Speciator EXCESS COEFFICIENT
+                        .125 / 8, 1, // Weight mutation STR
+                        .125 / 8, 1, // Weight mutation PROB
+                        .125 / 8, 1, // Link addition STR
+                        .125 / 8, 1, // Link addition PROB
+                        .125 / 8, 1, // Link removal STR
+                        .125 / 8, 1, // Link removal PROB
+                        .125 / 8, 1, // Link split STR
+                        .125 / 8, 1, // Link split PROB
+                        .125 / 8, 1, // Gene enable STR
+                        .125 / 8, 1, // Gene enable PROB
+                        .125 / 8, 1, // Gene disable STR
+                        .125 / 8, 1, // Gene disable PROB
+                })
+                .setInt(Key.IntKey.DefaultIntKey.POPULATION_SIZE, 100)
+                .setInt(NEATIntKey.INPUT_COUNT, 81)
+                .setInt(NEATIntKey.OUTPUT_COUNT, 6)
+                .setInt(NEATIntKey.INITIAL_LINK_COUNT, 1)
+                .setDouble(NEATDoubleKey.NOVELTY_THRESHOLD, 10)
+                .setInt(NEATIntKey.NOVELTY_DISTANCE_COUNT, 10);
 
         NEATPopulationGenerator neatPopulationGenerator = new NEATPopulationGenerator(neatGenomeManager);
 
@@ -51,18 +97,44 @@ public final class Run {
         Selector<NEATGenome> selector = new RouletteWheelLinearSelection<>();
         Operator<NEATGenome> operator = new DefaultOperator<>(mutators, recombiner, selector, neatSpeciator);
 
-        List<OptimizationFunction<NEATGenome>> optimizationFunctions = Arrays.asList();
+        List<OptimizationFunction<NEATGenome>> optimizationFunctions = Arrays.asList(new SMBNoveltySearch(), new SMBDistanceFunction(), new SMBScoreFunction(), new NEATPhenomeSizeFunction());
 
         NSGA_II<NEATGenome> nsga_ii = new NSGA_II<>(properties, operator, optimizationFunctions, neatPopulationGenerator);
+
+        nsga_ii.addObserver(populationData -> {
+            double elapsedTimeMS = (populationData.getElapsedTime() / 1000000d);
+            double observationTimeMS = (populationData.getPreviousObservationTime() / 1000000d);
+            System.out.println("Elapsed time in generation " + populationData.getCurrentGeneration() + ": " + String.format("%.4f", elapsedTimeMS) + "ms, with " + String.format("%.4f", observationTimeMS) + "ms observation time");
+            System.out.println("Max distance = " + populationData.getTruncatedPopulation().getPopulation().parallelStream().mapToDouble(new ToDoubleFunction<FrontedIndividual<NEATGenome>>() {
+                @Override
+                public double applyAsDouble(FrontedIndividual<NEATGenome> value) {
+                    assert value.getIndividual().marioBrosData != null;
+                    return value.getIndividual().marioBrosData.dataPoints.parallelStream().mapToDouble(value1 -> value1.marioX).max().orElse(Double.NaN);
+                }
+            }).max().orElse(Double.NaN));
+
+            try {
+                Kryo kryo = new Kryo();
+                kryo.writeClassAndObject(new Output(new FileOutputStream("generations/" + populationData.getCurrentGeneration() + ".bin")), populationData);
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
+        });
+
+        //noinspection MagicNumber
+        for (int i = 0; i < 1000000; i++) {
+            nsga_ii.runGeneration();
+        }
     }
 
     @SuppressWarnings("MagicNumber")
-    public static void computeFitness(NEATGenome candidate) {
+    private static void computeFitness(NEATGenome candidate) {
 
         final NEATPhenome network = new NEATPhenome(candidate);
         if (nes.get() == null || ui.get() == null) {
             ui.set(new HeadlessUI("C:\\Users\\Mitchell\\Desktop\\fceux-2.2.2-win32\\ROMs\\Super Mario Bros..nes", false));
-            nes.set(new NES(ui.get()));
+            nes.set(ui.get().getNes());
+            //nes.get().setControllers(new PuppetController(), new PuppetController());
         }
         final NES nes = Run.nes.get();
         final HeadlessUI ui = Run.ui.get();
@@ -117,11 +189,13 @@ public final class Run {
                 maxDistance = marioX;
                 timeout = 0;
             }
-            if (lives <= 2 || timeout > 120 || marioState == 0x0B) {
+            if (lives <= 2 || timeout > 60 || marioState == 0x0B) {
                 break;
             }
 
-            final int[][] vision = new int[13][13];
+            final int visionSize = 9;
+
+            final int[][] vision = new int[visionSize][visionSize];
 
             for (int dx = -vision[0].length / 2; dx < vision[0].length / 2; dx += 1)
                 for (int dy = -vision.length / 2; dy < vision.length / 2; dy += 1) {
@@ -130,8 +204,8 @@ public final class Run {
                     int page = (int) FastMath.floor(x / 256) % 2;
                     int subx = (int) FastMath.floor((x % 256) / 16);
                     int suby = (int) FastMath.floor((y - 32) / 16);
-                    int addr = 0x500 + page * 13 * 16 + suby * 16 + subx;
-                    if (suby >= 13 || suby < 0) {
+                    int addr = 0x500 + page * visionSize * 16 + suby * 16 + subx;
+                    if (suby >= visionSize || suby < 0) {
                         // System.out.println("Outside level.");
                         vision[dy + (vision.length / 2)][dx + (vision[0].length / 2)] = 0;
                     } else {
@@ -173,33 +247,6 @@ public final class Run {
 
     public static void verifyScores(Collection<Individual<NEATGenome>> individuals) {
         individuals.parallelStream().filter(neatGenomeIndividual -> neatGenomeIndividual.getIndividual().marioBrosData == null).forEach(neatGenomeIndividual -> computeFitness(neatGenomeIndividual.getIndividual()));
-    }
-
-    public static double getDistance(MarioBrosData data1, MarioBrosData data2) {
-        double sum = 0;
-
-        MarioBrosData.DataPoint dataPoint1 = null, dataPoint2 = null;
-        Iterator<MarioBrosData.DataPoint> dataPointIterator1 = data1.dataPoints.iterator(), dataPointIterator2 = data2.dataPoints.iterator();
-
-        while (dataPointIterator1.hasNext() || dataPointIterator2.hasNext()) {
-            if (dataPointIterator1.hasNext())
-                dataPoint1 = dataPointIterator1.next();
-            if (dataPointIterator2.hasNext())
-                dataPoint2 = dataPointIterator2.next();
-
-            assert dataPoint1 != null && dataPoint2 != null;
-
-            sum += FastMath.pow(dataPoint1.score - dataPoint2.score, 2);
-            sum += FastMath.pow(dataPoint1.time - dataPoint2.time, 2);
-            sum += FastMath.pow(dataPoint1.world - dataPoint2.world, 2);
-            sum += FastMath.pow(dataPoint1.level - dataPoint2.level, 2);
-            sum += FastMath.pow(dataPoint1.lives - dataPoint2.lives, 2);
-            sum += FastMath.pow(dataPoint1.marioX - dataPoint2.marioX, 2);
-            sum += FastMath.pow(dataPoint1.marioY - dataPoint2.marioY, 2);
-            sum += FastMath.pow(dataPoint1.marioState - dataPoint2.marioState, 2);
-        }
-
-        return FastMath.sqrt(sum);
     }
 
 }

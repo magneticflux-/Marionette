@@ -2,6 +2,7 @@ package com.marionette.evolver.supermariobros.optimizationfunctions;
 
 import com.google.common.collect.TreeMultiset;
 import com.marionette.evolver.supermariobros.Run;
+import org.apache.commons.math3.util.FastMath;
 import org.javaneat.evolution.nsgaii.MarioBrosData;
 import org.javaneat.evolution.nsgaii.keys.NEATDoubleKey;
 import org.javaneat.evolution.nsgaii.keys.NEATIntKey;
@@ -12,6 +13,7 @@ import org.jnsgaii.properties.Key;
 import org.jnsgaii.properties.Properties;
 
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -23,6 +25,33 @@ import java.util.stream.IntStream;
 public class SMBNoveltySearch implements OptimizationFunction<NEATGenome> {
 
     private final Collection<MarioBrosData> history = new LinkedHashSet<>();
+
+    private static double getDistance(MarioBrosData data1, MarioBrosData data2) {
+        double sum = 0;
+
+        MarioBrosData.DataPoint dataPoint1 = null, dataPoint2 = null;
+        Iterator<MarioBrosData.DataPoint> dataPointIterator1 = data1.dataPoints.iterator(), dataPointIterator2 = data2.dataPoints.iterator();
+
+        while (dataPointIterator1.hasNext() || dataPointIterator2.hasNext()) {
+            if (dataPointIterator1.hasNext())
+                dataPoint1 = dataPointIterator1.next();
+            if (dataPointIterator2.hasNext())
+                dataPoint2 = dataPointIterator2.next();
+
+            assert dataPoint1 != null && dataPoint2 != null;
+
+            sum += FastMath.pow(dataPoint1.score - dataPoint2.score, 2);
+            sum += FastMath.pow(dataPoint1.time - dataPoint2.time, 2);
+            sum += FastMath.pow(dataPoint1.world - dataPoint2.world, 2);
+            sum += FastMath.pow(dataPoint1.level - dataPoint2.level, 2);
+            sum += FastMath.pow(dataPoint1.lives - dataPoint2.lives, 2);
+            sum += FastMath.pow(dataPoint1.marioX - dataPoint2.marioX, 2);
+            sum += FastMath.pow(dataPoint1.marioY - dataPoint2.marioY, 2);
+            sum += FastMath.pow(dataPoint1.marioState - dataPoint2.marioState, 2);
+        }
+
+        return FastMath.sqrt(sum);
+    }
 
     @Override
     public double[] evaluate(List<Individual<NEATGenome>> individuals, Properties properties) {
@@ -41,7 +70,7 @@ public class SMBNoveltySearch implements OptimizationFunction<NEATGenome> {
         //final int numDistances = properties.getInt(NEATIntKey.NOVELTY_DISTANCE_COUNT);
         if (history.size() < 1)
             history.add(individual.marioBrosData);
-        TreeMultiset<Double> distances = history.parallelStream().map(value -> Run.getDistance(individual.marioBrosData, value)).collect(Collectors.toCollection(TreeMultiset::create));
+        TreeMultiset<Double> distances = history.parallelStream().map(value -> getDistance(individual.marioBrosData, value)).collect(Collectors.toCollection(TreeMultiset::create));
         double average = distances.parallelStream().mapToDouble(value -> value).average().orElseGet(() -> Double.NaN);
         if (average > properties.getDouble(NEATDoubleKey.NOVELTY_THRESHOLD))
             history.add(individual.marioBrosData);
