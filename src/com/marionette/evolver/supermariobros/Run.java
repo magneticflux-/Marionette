@@ -10,8 +10,8 @@ import com.marionette.evolver.supermariobros.optimizationfunctions.NEATPhenomeSi
 import com.marionette.evolver.supermariobros.optimizationfunctions.SMBDistanceFunction;
 import com.marionette.evolver.supermariobros.optimizationfunctions.SMBNoveltySearch;
 import com.marionette.evolver.supermariobros.optimizationfunctions.SMBScoreFunction;
+
 import org.apache.commons.math3.util.FastMath;
-import org.javaneat.evolution.NEATGenomeManager;
 import org.javaneat.evolution.RunDemo;
 import org.javaneat.evolution.nsgaii.MarioBrosData;
 import org.javaneat.evolution.nsgaii.NEATPopulationGenerator;
@@ -19,14 +19,22 @@ import org.javaneat.evolution.nsgaii.NEATRecombiner;
 import org.javaneat.evolution.nsgaii.NEATSpeciator;
 import org.javaneat.evolution.nsgaii.keys.NEATDoubleKey;
 import org.javaneat.evolution.nsgaii.keys.NEATIntKey;
-import org.javaneat.evolution.nsgaii.mutators.*;
+import org.javaneat.evolution.nsgaii.mutators.NEATDisableGeneMutator;
+import org.javaneat.evolution.nsgaii.mutators.NEATEnableGeneMutator;
+import org.javaneat.evolution.nsgaii.mutators.NEATLinkAdditionMutator;
+import org.javaneat.evolution.nsgaii.mutators.NEATLinkRemovalMutator;
+import org.javaneat.evolution.nsgaii.mutators.NEATLinkSplitMutator;
+import org.javaneat.evolution.nsgaii.mutators.NEATWeightMutator;
 import org.javaneat.genome.NEATGenome;
 import org.javaneat.phenome.NEATPhenome;
 import org.jnsgaii.OptimizationFunction;
 import org.jnsgaii.examples.defaultoperatorframework.RouletteWheelLinearSelection;
 import org.jnsgaii.multiobjective.NSGA_II;
-import org.jnsgaii.multiobjective.population.FrontedIndividual;
-import org.jnsgaii.operators.*;
+import org.jnsgaii.operators.DefaultOperator;
+import org.jnsgaii.operators.Mutator;
+import org.jnsgaii.operators.Operator;
+import org.jnsgaii.operators.Recombiner;
+import org.jnsgaii.operators.Selector;
 import org.jnsgaii.population.individual.Individual;
 import org.jnsgaii.properties.Key;
 import org.jnsgaii.properties.Properties;
@@ -36,7 +44,6 @@ import java.io.FileOutputStream;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.function.ToDoubleFunction;
 
 /**
  * Created by Mitchell on 3/13/2016.
@@ -49,17 +56,15 @@ public final class Run {
     }
 
     public static void main(String[] args) {
-        NEATGenomeManager neatGenomeManager = new NEATGenomeManager();
-
         //noinspection MagicNumber
         Properties properties = new Properties()
                 .setValue(Key.DoubleKey.DefaultDoubleKey.INITIAL_ASPECT_ARRAY, new double[]{
-                        0, 1, // Crossover
+                        0, 1, // Crossover STR/PROB
                         5, 1, 1, // Speciator maxd/disj/exce
                         0, 1, // Weight mutation
                         0, .5, // Link addition
                         0, 0, // Link removal
-                        0, .15, // Link split
+                        0, .2, // Link split
                         0, .1, // Gene enable
                         0, 0, // Gene disable
                 })
@@ -82,14 +87,14 @@ public final class Run {
                         .125 / 8, 1, // Gene disable STR
                         .125 / 8, 1, // Gene disable PROB
                 })
-                .setInt(Key.IntKey.DefaultIntKey.POPULATION_SIZE, 100)
+                .setInt(Key.IntKey.DefaultIntKey.POPULATION_SIZE, 10)
                 .setInt(NEATIntKey.INPUT_COUNT, 81)
                 .setInt(NEATIntKey.OUTPUT_COUNT, 6)
-                .setInt(NEATIntKey.INITIAL_LINK_COUNT, 4)
+                .setInt(NEATIntKey.INITIAL_LINK_COUNT, 2)
                 .setDouble(NEATDoubleKey.NOVELTY_THRESHOLD, 10)
                 .setInt(NEATIntKey.NOVELTY_DISTANCE_COUNT, 10);
 
-        NEATPopulationGenerator neatPopulationGenerator = new NEATPopulationGenerator(neatGenomeManager);
+        NEATPopulationGenerator neatPopulationGenerator = new NEATPopulationGenerator();
 
         NEATSpeciator neatSpeciator = new NEATSpeciator();
         List<Mutator<NEATGenome>> mutators = Arrays.asList(new NEATWeightMutator(), new NEATLinkAdditionMutator(), new NEATLinkRemovalMutator(), new NEATLinkSplitMutator(), new NEATEnableGeneMutator(), new NEATDisableGeneMutator());
@@ -105,12 +110,9 @@ public final class Run {
             double elapsedTimeMS = (populationData.getElapsedTime() / 1000000d);
             double observationTimeMS = (populationData.getPreviousObservationTime() / 1000000d);
             System.out.println("Elapsed time in generation " + populationData.getCurrentGeneration() + ": " + String.format("%.4f", elapsedTimeMS) + "ms, with " + String.format("%.4f", observationTimeMS) + "ms observation time");
-            System.out.println("Max distance = " + populationData.getTruncatedPopulation().getPopulation().parallelStream().mapToDouble(new ToDoubleFunction<FrontedIndividual<NEATGenome>>() {
-                @Override
-                public double applyAsDouble(FrontedIndividual<NEATGenome> value) {
-                    assert value.getIndividual().marioBrosData != null;
-                    return value.getIndividual().marioBrosData.dataPoints.parallelStream().mapToDouble(value1 -> value1.marioX).max().orElse(Double.NaN);
-                }
+            System.out.println("Max distance = " + populationData.getTruncatedPopulation().getPopulation().parallelStream().mapToDouble(value -> {
+                assert value.getIndividual().marioBrosData != null;
+                return value.getIndividual().marioBrosData.dataPoints.parallelStream().mapToDouble(value1 -> value1.marioX).max().orElse(Double.NaN);
             }).max().orElse(Double.NaN));
 
             try {
@@ -127,12 +129,16 @@ public final class Run {
         }
     }
 
+    public static void verifyScores(Collection<Individual<NEATGenome>> individuals) {
+        individuals.parallelStream().filter(neatGenomeIndividual -> neatGenomeIndividual.getIndividual().marioBrosData == null).forEach(neatGenomeIndividual -> computeFitness(neatGenomeIndividual.getIndividual()));
+    }
+
     @SuppressWarnings("MagicNumber")
     private static void computeFitness(NEATGenome candidate) {
 
         final NEATPhenome network = new NEATPhenome(candidate);
         if (nes.get() == null || ui.get() == null) {
-            ui.set(new HeadlessUI("C:\\Users\\Mitchell\\Desktop\\fceux-2.2.2-win32\\ROMs\\Super Mario Bros..nes", false));
+            ui.set(new HeadlessUI("roms/Super Mario Bros..nes", false));
             nes.set(ui.get().getNes());
             //nes.get().setControllers(new PuppetController(), new PuppetController());
         }
@@ -141,7 +147,7 @@ public final class Run {
         nes.reset();
 
         CPURAM cpuram;
-        PuppetController controller1 = (PuppetController) nes.getcontroller1();
+        PuppetController controller1 = ui.getController1();
 
         for (int i = 0; i < 31; i++)
             // Exact frame number until it can begin.
@@ -240,13 +246,9 @@ public final class Run {
             // if (reactions[6] > 0) input.keyPressed(SELECT);
             // if (reactions[7] > 0) input.keyPressed(START);
 
-            nes.frameAdvance();
+            ui.runFrame();
         }
         candidate.marioBrosData = data;
-    }
-
-    public static void verifyScores(Collection<Individual<NEATGenome>> individuals) {
-        individuals.parallelStream().filter(neatGenomeIndividual -> neatGenomeIndividual.getIndividual().marioBrosData == null).forEach(neatGenomeIndividual -> computeFitness(neatGenomeIndividual.getIndividual()));
     }
 
 }
