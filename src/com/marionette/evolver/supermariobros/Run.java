@@ -57,7 +57,7 @@ public final class Run {
                         0, 1, // Crossover
                         5, 1, 1, // Speciator maxd/disj/exce
                         0, 1, // Weight mutation
-                        0, .3, // Link addition
+                        0, .5, // Link addition
                         0, 0, // Link removal
                         0, .15, // Link split
                         0, .1, // Gene enable
@@ -85,7 +85,7 @@ public final class Run {
                 .setInt(Key.IntKey.DefaultIntKey.POPULATION_SIZE, 100)
                 .setInt(NEATIntKey.INPUT_COUNT, 81)
                 .setInt(NEATIntKey.OUTPUT_COUNT, 6)
-                .setInt(NEATIntKey.INITIAL_LINK_COUNT, 1)
+                .setInt(NEATIntKey.INITIAL_LINK_COUNT, 4)
                 .setDouble(NEATDoubleKey.NOVELTY_THRESHOLD, 10)
                 .setInt(NEATIntKey.NOVELTY_DISTANCE_COUNT, 10);
 
