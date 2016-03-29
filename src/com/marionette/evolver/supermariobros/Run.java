@@ -10,7 +10,6 @@ import com.marionette.evolver.supermariobros.optimizationfunctions.NEATPhenomeSi
 import com.marionette.evolver.supermariobros.optimizationfunctions.SMBDistanceFunction;
 import com.marionette.evolver.supermariobros.optimizationfunctions.SMBNoveltySearch;
 import com.marionette.evolver.supermariobros.optimizationfunctions.SMBScoreFunction;
-
 import org.apache.commons.math3.util.FastMath;
 import org.javaneat.evolution.RunDemo;
 import org.javaneat.evolution.nsgaii.MarioBrosData;
@@ -19,22 +18,13 @@ import org.javaneat.evolution.nsgaii.NEATRecombiner;
 import org.javaneat.evolution.nsgaii.NEATSpeciator;
 import org.javaneat.evolution.nsgaii.keys.NEATDoubleKey;
 import org.javaneat.evolution.nsgaii.keys.NEATIntKey;
-import org.javaneat.evolution.nsgaii.mutators.NEATDisableGeneMutator;
-import org.javaneat.evolution.nsgaii.mutators.NEATEnableGeneMutator;
-import org.javaneat.evolution.nsgaii.mutators.NEATLinkAdditionMutator;
-import org.javaneat.evolution.nsgaii.mutators.NEATLinkRemovalMutator;
-import org.javaneat.evolution.nsgaii.mutators.NEATLinkSplitMutator;
-import org.javaneat.evolution.nsgaii.mutators.NEATWeightMutator;
+import org.javaneat.evolution.nsgaii.mutators.*;
 import org.javaneat.genome.NEATGenome;
 import org.javaneat.phenome.NEATPhenome;
 import org.jnsgaii.OptimizationFunction;
 import org.jnsgaii.examples.defaultoperatorframework.RouletteWheelLinearSelection;
 import org.jnsgaii.multiobjective.NSGA_II;
-import org.jnsgaii.operators.DefaultOperator;
-import org.jnsgaii.operators.Mutator;
-import org.jnsgaii.operators.Operator;
-import org.jnsgaii.operators.Recombiner;
-import org.jnsgaii.operators.Selector;
+import org.jnsgaii.operators.*;
 import org.jnsgaii.population.individual.Individual;
 import org.jnsgaii.properties.Key;
 import org.jnsgaii.properties.Properties;
@@ -62,9 +52,9 @@ public final class Run {
                         0, 1, // Crossover STR/PROB
                         5, 1, 1, // Speciator maxd/disj/exce
                         0, 1, // Weight mutation
-                        0, .5, // Link addition
+                        0, .4, // Link addition
                         0, 0, // Link removal
-                        0, .2, // Link split
+                        0, .3, // Link split
                         0, .1, // Gene enable
                         0, 0, // Gene disable
                 })
@@ -87,7 +77,7 @@ public final class Run {
                         .125 / 8, 1, // Gene disable STR
                         .125 / 8, 1, // Gene disable PROB
                 })
-                .setInt(Key.IntKey.DefaultIntKey.POPULATION_SIZE, 10)
+                .setInt(Key.IntKey.DefaultIntKey.POPULATION_SIZE, 100)
                 .setInt(NEATIntKey.INPUT_COUNT, 81)
                 .setInt(NEATIntKey.OUTPUT_COUNT, 6)
                 .setInt(NEATIntKey.INITIAL_LINK_COUNT, 2)
@@ -235,7 +225,7 @@ public final class Run {
             }
 
             double[] visionUnwound = RunDemo.NESFitness.unwind2DArray(vision);
-            double[] reactions = network.stepTime(visionUnwound);
+            double[] reactions = network.stepTime(visionUnwound, 5);
 
             if (reactions[0] > 0) controller1.pressButton(PuppetController.Button.UP);
             if (reactions[1] > 0) controller1.pressButton(PuppetController.Button.DOWN);
