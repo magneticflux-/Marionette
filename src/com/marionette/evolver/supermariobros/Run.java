@@ -10,7 +10,6 @@ import com.marionette.evolver.supermariobros.optimizationfunctions.NEATPhenomeSi
 import com.marionette.evolver.supermariobros.optimizationfunctions.SMBDistanceFunction;
 import com.marionette.evolver.supermariobros.optimizationfunctions.SMBNoveltySearch;
 import com.marionette.evolver.supermariobros.optimizationfunctions.SMBScoreFunction;
-
 import org.apache.commons.math3.util.FastMath;
 import org.javaneat.evolution.RunDemo;
 import org.javaneat.evolution.nsgaii.MarioBrosData;
@@ -19,12 +18,7 @@ import org.javaneat.evolution.nsgaii.NEATRecombiner;
 import org.javaneat.evolution.nsgaii.NEATSpeciator;
 import org.javaneat.evolution.nsgaii.keys.NEATDoubleKey;
 import org.javaneat.evolution.nsgaii.keys.NEATIntKey;
-import org.javaneat.evolution.nsgaii.mutators.NEATDisableGeneMutator;
-import org.javaneat.evolution.nsgaii.mutators.NEATEnableGeneMutator;
-import org.javaneat.evolution.nsgaii.mutators.NEATLinkAdditionMutator;
-import org.javaneat.evolution.nsgaii.mutators.NEATLinkRemovalMutator;
-import org.javaneat.evolution.nsgaii.mutators.NEATLinkSplitMutator;
-import org.javaneat.evolution.nsgaii.mutators.NEATWeightMutator;
+import org.javaneat.evolution.nsgaii.mutators.*;
 import org.javaneat.genome.NEATGenome;
 import org.javaneat.phenome.NEATPhenome;
 import org.jnsgaii.OptimizationFunction;
@@ -32,12 +26,12 @@ import org.jnsgaii.examples.defaultoperatorframework.RouletteWheelLinearSelectio
 import org.jnsgaii.multiobjective.NSGA_II;
 import org.jnsgaii.operators.DefaultOperator;
 import org.jnsgaii.operators.Mutator;
-import org.jnsgaii.operators.Operator;
 import org.jnsgaii.operators.Recombiner;
 import org.jnsgaii.operators.Selector;
 import org.jnsgaii.population.individual.Individual;
 import org.jnsgaii.properties.Key;
 import org.jnsgaii.properties.Properties;
+import org.jnsgaii.visualization.DefaultVisualization;
 
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -62,7 +56,7 @@ public final class Run {
                         0, 1, // Crossover STR/PROB
                         5, 1, 1, // Speciator maxd/disj/exce
                         0, 1, // Weight mutation
-                        0, .4, // Link addition
+                        1, .4, // Link addition
                         0, 0, // Link removal
                         0, .3, // Link split
                         0, .1, // Gene enable
@@ -100,7 +94,7 @@ public final class Run {
         List<Mutator<NEATGenome>> mutators = Arrays.asList(new NEATWeightMutator(), new NEATLinkAdditionMutator(), new NEATLinkRemovalMutator(), new NEATLinkSplitMutator(), new NEATEnableGeneMutator(), new NEATDisableGeneMutator());
         Recombiner<NEATGenome> recombiner = new NEATRecombiner();
         Selector<NEATGenome> selector = new RouletteWheelLinearSelection<>();
-        Operator<NEATGenome> operator = new DefaultOperator<>(mutators, recombiner, selector, neatSpeciator);
+        DefaultOperator<NEATGenome> operator = new DefaultOperator<>(mutators, recombiner, selector, neatSpeciator);
 
         List<OptimizationFunction<NEATGenome>> optimizationFunctions = Arrays.asList(new SMBNoveltySearch(), new SMBDistanceFunction(), new SMBScoreFunction(), new NEATPhenomeSizeFunction());
 
@@ -122,6 +116,8 @@ public final class Run {
                 e.printStackTrace();
             }
         });
+
+        DefaultVisualization.startInterface(operator, optimizationFunctions, nsga_ii, properties);
 
         //noinspection MagicNumber
         for (int i = 0; i < 1000000; i++) {
