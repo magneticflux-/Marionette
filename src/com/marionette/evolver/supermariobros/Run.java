@@ -10,6 +10,7 @@ import com.marionette.evolver.supermariobros.optimizationfunctions.NEATPhenomeSi
 import com.marionette.evolver.supermariobros.optimizationfunctions.SMBDistanceFunction;
 import com.marionette.evolver.supermariobros.optimizationfunctions.SMBNoveltySearch;
 import com.marionette.evolver.supermariobros.optimizationfunctions.SMBScoreFunction;
+
 import org.apache.commons.math3.util.FastMath;
 import org.javaneat.evolution.RunDemo;
 import org.javaneat.evolution.nsgaii.MarioBrosData;
@@ -18,13 +19,22 @@ import org.javaneat.evolution.nsgaii.NEATRecombiner;
 import org.javaneat.evolution.nsgaii.NEATSpeciator;
 import org.javaneat.evolution.nsgaii.keys.NEATDoubleKey;
 import org.javaneat.evolution.nsgaii.keys.NEATIntKey;
-import org.javaneat.evolution.nsgaii.mutators.*;
+import org.javaneat.evolution.nsgaii.mutators.NEATDisableGeneMutator;
+import org.javaneat.evolution.nsgaii.mutators.NEATEnableGeneMutator;
+import org.javaneat.evolution.nsgaii.mutators.NEATLinkAdditionMutator;
+import org.javaneat.evolution.nsgaii.mutators.NEATLinkRemovalMutator;
+import org.javaneat.evolution.nsgaii.mutators.NEATLinkSplitMutator;
+import org.javaneat.evolution.nsgaii.mutators.NEATWeightMutator;
 import org.javaneat.genome.NEATGenome;
 import org.javaneat.phenome.NEATPhenome;
 import org.jnsgaii.OptimizationFunction;
 import org.jnsgaii.examples.defaultoperatorframework.RouletteWheelLinearSelection;
 import org.jnsgaii.multiobjective.NSGA_II;
-import org.jnsgaii.operators.*;
+import org.jnsgaii.operators.DefaultOperator;
+import org.jnsgaii.operators.Mutator;
+import org.jnsgaii.operators.Operator;
+import org.jnsgaii.operators.Recombiner;
+import org.jnsgaii.operators.Selector;
 import org.jnsgaii.population.individual.Individual;
 import org.jnsgaii.properties.Key;
 import org.jnsgaii.properties.Properties;
@@ -139,6 +149,8 @@ public final class Run {
         CPURAM cpuram;
         PuppetController controller1 = ui.getController1();
 
+        boolean goesRight = candidate.getConnectionGeneList().stream().anyMatch(connectionGene -> connectionGene.getToNode() == 85);
+
         for (int i = 0; i < 31; i++)
             // Exact frame number until it can begin.
             ui.runFrame();
@@ -185,7 +197,8 @@ public final class Run {
                 maxDistance = marioX;
                 timeout = 0;
             }
-            if (lives <= 2 || timeout > 60 || marioState == 0x0B) {
+            if (lives < 3 || timeout > 120 || marioState == 0x0B || !goesRight) {
+                //System.out.println(lives + " " + timeout + " " + marioState + " " + goesRight + " " + marioX);
                 break;
             }
 
