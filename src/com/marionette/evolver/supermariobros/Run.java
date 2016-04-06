@@ -18,7 +18,10 @@ import org.javaneat.evolution.nsgaii.NEATRecombiner;
 import org.javaneat.evolution.nsgaii.NEATSpeciator;
 import org.javaneat.evolution.nsgaii.keys.NEATDoubleKey;
 import org.javaneat.evolution.nsgaii.keys.NEATIntKey;
-import org.javaneat.evolution.nsgaii.mutators.*;
+import org.javaneat.evolution.nsgaii.mutators.NEATLinkAdditionMutator;
+import org.javaneat.evolution.nsgaii.mutators.NEATLinkRemovalMutator;
+import org.javaneat.evolution.nsgaii.mutators.NEATLinkSplitMutator;
+import org.javaneat.evolution.nsgaii.mutators.NEATWeightMutator;
 import org.javaneat.genome.NEATGenome;
 import org.javaneat.phenome.NEATPhenome;
 import org.jnsgaii.OptimizationFunction;
@@ -45,6 +48,7 @@ import java.util.List;
 public final class Run {
     private static final ThreadLocal<NES> nes = new ThreadLocal<>();
     private static final ThreadLocal<HeadlessUI> ui = new ThreadLocal<>();
+    private static final int visionSize = 11;
 
     private Run() {
     }
@@ -53,36 +57,30 @@ public final class Run {
         //noinspection MagicNumber
         Properties properties = new Properties()
                 .setValue(Key.DoubleKey.DefaultDoubleKey.INITIAL_ASPECT_ARRAY, new double[]{
-                        0, 1, // Crossover STR/PROB
+                        .5, 1, // Crossover STR/PROB
                         5, 1, 1, // Speciator maxd/disj/exce
-                        0, 1, // Weight mutation
-                        1, .4, // Link addition
+                        0, .5, // Weight mutation
+                        1, .2, // Link addition
                         0, 0, // Link removal
-                        0, .3, // Link split
-                        0, .1, // Gene enable
-                        0, 0, // Gene disable
+                        0, .1, // Link split
                 })
                 .setValue(Key.DoubleKey.DefaultDoubleKey.ASPECT_MODIFICATION_ARRAY, new double[]{
-                        .125 / 8, 1, // Crossover STR
-                        .125 / 8, 1, // Crossover PROB
-                        .125 / 8, 1, // Speciator MAX MATING DISTANCE
-                        .125 / 8, 1, // Speciator DISJOINT COEFFICIENT
-                        .125 / 8, 1, // Speciator EXCESS COEFFICIENT
-                        .125 / 8, 1, // Weight mutation STR
-                        .125 / 8, 1, // Weight mutation PROB
-                        .125 / 8, 1, // Link addition STR
-                        .125 / 8, 1, // Link addition PROB
-                        .125 / 8, 1, // Link removal STR
-                        .125 / 8, 1, // Link removal PROB
-                        .125 / 8, 1, // Link split STR
-                        .125 / 8, 1, // Link split PROB
-                        .125 / 8, 1, // Gene enable STR
-                        .125 / 8, 1, // Gene enable PROB
-                        .125 / 8, 1, // Gene disable STR
-                        .125 / 8, 1, // Gene disable PROB
+                        .125 / 2, 1, // Crossover STR
+                        .125 / 2, 1, // Crossover PROB
+                        .125 / 2, 1, // Speciator MAX MATING DISTANCE
+                        .125 / 2, 1, // Speciator DISJOINT COEFFICIENT
+                        .125 / 2, 1, // Speciator EXCESS COEFFICIENT
+                        .125 / 2, 1, // Weight mutation STR
+                        .125 / 2, 1, // Weight mutation PROB
+                        .125 / 2, 1, // Link addition STR
+                        .125 / 2, 1, // Link addition PROB
+                        .125 / 2, 1, // Link removal STR
+                        .125 / 2, 1, // Link removal PROB
+                        .125 / 2, 1, // Link split STR
+                        .125 / 2, 1, // Link split PROB
                 })
                 .setInt(Key.IntKey.DefaultIntKey.POPULATION_SIZE, 100)
-                .setInt(NEATIntKey.INPUT_COUNT, 81)
+                .setInt(NEATIntKey.INPUT_COUNT, visionSize * visionSize)
                 .setInt(NEATIntKey.OUTPUT_COUNT, 6)
                 .setInt(NEATIntKey.INITIAL_LINK_COUNT, 2)
                 .setDouble(NEATDoubleKey.NOVELTY_THRESHOLD, 10)
@@ -91,7 +89,7 @@ public final class Run {
         NEATPopulationGenerator neatPopulationGenerator = new NEATPopulationGenerator();
 
         NEATSpeciator neatSpeciator = new NEATSpeciator();
-        List<Mutator<NEATGenome>> mutators = Arrays.asList(new NEATWeightMutator(), new NEATLinkAdditionMutator(), new NEATLinkRemovalMutator(), new NEATLinkSplitMutator(), new NEATEnableGeneMutator(), new NEATDisableGeneMutator());
+        List<Mutator<NEATGenome>> mutators = Arrays.asList(new NEATWeightMutator(), new NEATLinkAdditionMutator(), new NEATLinkRemovalMutator(), new NEATLinkSplitMutator());
         Recombiner<NEATGenome> recombiner = new NEATRecombiner();
         Selector<NEATGenome> selector = new RouletteWheelLinearSelection<>();
         DefaultOperator<NEATGenome> operator = new DefaultOperator<>(mutators, recombiner, selector, neatSpeciator);
@@ -145,7 +143,7 @@ public final class Run {
         CPURAM cpuram;
         PuppetController controller1 = ui.getController1();
 
-        boolean goesRight = candidate.getConnectionGeneList().stream().anyMatch(connectionGene -> connectionGene.getToNode() == 85);
+        boolean goesRight = candidate.getConnectionGeneList().stream().anyMatch(connectionGene -> connectionGene.getToNode() == candidate.getManager().getOutputOffset() + 3);
 
         for (int i = 0; i < 31; i++)
             // Exact frame number until it can begin.
@@ -197,8 +195,6 @@ public final class Run {
                 //System.out.println(lives + " " + timeout + " " + marioState + " " + goesRight + " " + marioX);
                 break;
             }
-
-            final int visionSize = 9;
 
             final int[][] vision = new int[visionSize][visionSize];
 
