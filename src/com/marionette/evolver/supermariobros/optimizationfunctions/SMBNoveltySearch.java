@@ -2,7 +2,6 @@ package com.marionette.evolver.supermariobros.optimizationfunctions;
 
 import com.google.common.collect.TreeMultiset;
 import com.marionette.evolver.supermariobros.Run;
-
 import org.apache.commons.math3.util.FastMath;
 import org.javaneat.evolution.nsgaii.MarioBrosData;
 import org.javaneat.evolution.nsgaii.keys.NEATDoubleKey;
@@ -13,9 +12,9 @@ import org.jnsgaii.population.individual.Individual;
 import org.jnsgaii.properties.Key;
 import org.jnsgaii.properties.Properties;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -25,31 +24,7 @@ import java.util.stream.IntStream;
  */
 public class SMBNoveltySearch implements OptimizationFunction<NEATGenome> {
 
-    private final Collection<MarioBrosData> history = new LinkedHashSet<>();
-
-    @Override
-    public double[] evaluate(List<Individual<NEATGenome>> individuals, Properties properties) {
-        Run.verifyScores(individuals);
-        double[] scores = new double[individuals.size()];
-
-        IntStream stream = IntStream.range(0, scores.length);
-
-        stream.forEach(
-                value -> scores[value] = evaluateIndividual(individuals.get(value).getIndividual(), properties)
-        );
-        return scores;
-    }
-
-    private double evaluateIndividual(NEATGenome individual, Properties properties) {
-        //final int numDistances = properties.getInt(NEATIntKey.NOVELTY_DISTANCE_COUNT);
-        if (history.size() < 1)
-            history.add(individual.marioBrosData);
-        TreeMultiset<Double> distances = history.parallelStream().map(value -> getDistance(individual.marioBrosData, value)).collect(Collectors.toCollection(() -> TreeMultiset.create()));
-        double average = distances.parallelStream().mapToDouble(value -> value).average().orElseGet(() -> Double.NaN);
-        if (average > properties.getDouble(NEATDoubleKey.NOVELTY_THRESHOLD))
-            history.add(individual.marioBrosData);
-        return average;
-    }
+    private final Collection<MarioBrosData> history = new ArrayList<>();
 
     private static double getDistance(MarioBrosData data1, MarioBrosData data2) {
         double sum = 0;
@@ -76,6 +51,30 @@ public class SMBNoveltySearch implements OptimizationFunction<NEATGenome> {
         }
 
         return FastMath.sqrt(sum);
+    }
+
+    @Override
+    public double[] evaluate(List<Individual<NEATGenome>> individuals, Properties properties) {
+        Run.verifyScores(individuals);
+        double[] scores = new double[individuals.size()];
+
+        IntStream stream = IntStream.range(0, scores.length);
+
+        stream.forEach(
+                value -> scores[value] = evaluateIndividual(individuals.get(value).getIndividual(), properties)
+        );
+        return scores;
+    }
+
+    private double evaluateIndividual(NEATGenome individual, Properties properties) {
+        int numDistances = properties.getInt(NEATIntKey.NOVELTY_DISTANCE_COUNT);
+        if (history.size() < 1)
+            history.add(individual.marioBrosData);
+        TreeMultiset<Double> distances = history.parallelStream().map(value -> getDistance(individual.marioBrosData, value)).collect(Collectors.toCollection(TreeMultiset::create));
+        double average = distances.stream().limit(numDistances).mapToDouble(value -> value).average().orElseGet(() -> Double.NaN);
+        if (average > properties.getDouble(NEATDoubleKey.NOVELTY_THRESHOLD))
+            history.add(individual.marioBrosData);
+        return average;
     }
 
     @Override
