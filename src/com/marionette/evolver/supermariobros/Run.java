@@ -10,7 +10,6 @@ import com.marionette.evolver.supermariobros.optimizationfunctions.NEATPhenomeSi
 import com.marionette.evolver.supermariobros.optimizationfunctions.SMBDistanceFunction;
 import com.marionette.evolver.supermariobros.optimizationfunctions.SMBNoveltySearch;
 import com.marionette.evolver.supermariobros.optimizationfunctions.SMBScoreFunction;
-
 import org.apache.commons.math3.util.FastMath;
 import org.javaneat.evolution.RunDemo;
 import org.javaneat.evolution.nsgaii.MarioBrosData;
@@ -59,32 +58,32 @@ public final class Run {
         Properties properties = new Properties()
                 .setValue(Key.DoubleKey.DefaultDoubleKey.INITIAL_ASPECT_ARRAY, new double[]{
                         .5, 1, // Crossover STR/PROB
-                        5, 1, 1, // Speciator maxd/disj/exce
-                        0, .5, // Weight mutation
+                        4, 1, 1, // Speciator maxd/disj/exce
+                        0, .125, // Weight mutation
                         1, .2, // Link addition
                         0, 0, // Link removal
                         0, .1, // Link split
                 })
                 .setValue(Key.DoubleKey.DefaultDoubleKey.ASPECT_MODIFICATION_ARRAY, new double[]{
-                        .125 / 2, 1, // Crossover STR
-                        .125 / 2, 1, // Crossover PROB
-                        .125 / 2, 1, // Speciator MAX MATING DISTANCE
-                        .125 / 2, 1, // Speciator DISJOINT COEFFICIENT
-                        .125 / 2, 1, // Speciator EXCESS COEFFICIENT
-                        .125 / 2, 1, // Weight mutation STR
-                        .125 / 2, 1, // Weight mutation PROB
-                        .125 / 2, 1, // Link addition STR
-                        .125 / 2, 1, // Link addition PROB
-                        .125 / 2, 1, // Link removal STR
-                        .125 / 2, 1, // Link removal PROB
-                        .125 / 2, 1, // Link split STR
-                        .125 / 2, 1, // Link split PROB
+                        .125 / 4, 1, // Crossover STR
+                        .125 / 4, 1, // Crossover PROB
+                        .125 / 4, 1, // Speciator MAX MATING DISTANCE
+                        .125 / 4, 1, // Speciator DISJOINT COEFFICIENT
+                        .125 / 4, 1, // Speciator EXCESS COEFFICIENT
+                        .125 / 4, 1, // Weight mutation STR
+                        .125 / 4, 1, // Weight mutation PROB
+                        .125 / 4, 1, // Link addition STR
+                        .125 / 4, 1, // Link addition PROB
+                        .125 / 4, 1, // Link removal STR
+                        .125 / 4, 1, // Link removal PROB
+                        .125 / 4, 1, // Link split STR
+                        .125 / 4, 1, // Link split PROB
                 })
                 .setInt(Key.IntKey.DefaultIntKey.POPULATION_SIZE, 100)
                 .setInt(NEATIntKey.INPUT_COUNT, visionSize * visionSize)
                 .setInt(NEATIntKey.OUTPUT_COUNT, 6)
                 .setInt(NEATIntKey.INITIAL_LINK_COUNT, 2)
-                .setDouble(NEATDoubleKey.NOVELTY_THRESHOLD, 10)
+                .setDouble(NEATDoubleKey.NOVELTY_THRESHOLD, 100)
                 .setInt(NEATIntKey.NOVELTY_DISTANCE_COUNT, 10);
 
         NEATPopulationGenerator neatPopulationGenerator = new NEATPopulationGenerator();
@@ -100,9 +99,6 @@ public final class Run {
         NSGA_II<NEATGenome> nsga_ii = new NSGA_II<>(properties, operator, optimizationFunctions, neatPopulationGenerator);
 
         nsga_ii.addObserver(populationData -> {
-            double elapsedTimeMS = (populationData.getElapsedTime() / 1000000d);
-            double observationTimeMS = (populationData.getPreviousObservationTime() / 1000000d);
-            System.out.println("Elapsed time in generation " + populationData.getCurrentGeneration() + ": " + String.format("%.4f", elapsedTimeMS) + "ms, with " + String.format("%.4f", observationTimeMS) + "ms observation time");
             System.out.println("Max distance = " + populationData.getTruncatedPopulation().getPopulation().parallelStream().mapToDouble(value -> {
                 assert value.getIndividual().marioBrosData != null;
                 return value.getIndividual().marioBrosData.dataPoints.parallelStream().mapToDouble(value1 -> value1.marioX).max().orElse(Double.NaN);
