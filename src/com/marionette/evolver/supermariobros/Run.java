@@ -106,7 +106,9 @@ public final class Run {
 
             try {
                 Kryo kryo = new Kryo();
-                kryo.writeClassAndObject(new Output(new FileOutputStream("generations/" + populationData.getCurrentGeneration() + ".bin")), populationData);
+                Output out = new Output(new FileOutputStream("generations/" + populationData.getCurrentGeneration() + ".bin"));
+                kryo.writeClassAndObject(out, populationData);
+                out.close();
             } catch (FileNotFoundException e) {
                 e.printStackTrace();
             }

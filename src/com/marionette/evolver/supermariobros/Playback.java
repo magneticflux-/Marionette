@@ -9,41 +9,49 @@ import com.grapeshot.halfnes.ui.PuppetController;
 import org.apache.commons.math3.util.FastMath;
 import org.javaneat.genome.NEATGenome;
 import org.javaneat.phenome.NEATPhenome;
+import org.jnsgaii.population.PopulationData;
 
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+import java.awt.Graphics;
+import java.awt.image.BufferedImage;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.util.concurrent.atomic.AtomicReference;
 
-public class Playback {
+public final class Playback {
+    private static final int visionSize = 11;
+
+    private Playback() {
+    }
+
     @SuppressWarnings("MagicNumber")
-    public static void main(String[] args) throws InterruptedException {
+    public static void main(String[] args) throws InterruptedException, FileNotFoundException {
         Kryo kryo = new Kryo();
 
-        NEATGenome candidate = null;
-        int generation = 0;
-        for (int i = 207; i < 208; i++) {
-            Input in = null;
-            try {
-                in = new Input(new FileInputStream("saves/supermariobros/generation_" + i + ".pop"));
-            } catch (final FileNotFoundException e1) {
-                e1.printStackTrace();
-            }
-            NEATGenome temp = ((NEATGenome) kryo.readClassAndObject(in));
-            if (candidate == null
-                    || (temp.getScore() + temp.getConnectionGeneList().size() * 2) > (candidate.getScore() + candidate.getConnectionGeneList().size() * 2)) {
-                candidate = temp;
-                generation = i;
-            }
-            in.close();
+        Input in = new Input(new FileInputStream("generations/532.bin"));
+        @SuppressWarnings("unchecked")
+        PopulationData<NEATGenome> populationData = (PopulationData<NEATGenome>) kryo.readClassAndObject(in);
+        in.close();
 
-        }
-        System.out.println("Running generation " + generation + " with a total score of "
-                + (candidate.getScore() + candidate.getConnectionGeneList().size() * 2));
+        NEATGenome genome = populationData.getTruncatedPopulation().getPopulation().get(0).getIndividual();
 
-        NEATPhenome network = new NEATPhenome(candidate);
-        HeadlessUI ui = new HeadlessUI("C:\\Users\\Mitchell\\Desktop\\fceux-2.2.2-win32\\ROMs\\Super Mario Bros..nes", true);
+        NEATPhenome network = new NEATPhenome(genome);
+
+        final AtomicReference<BufferedImage> image = new AtomicReference<>(new BufferedImage(10, 10, BufferedImage.TYPE_INT_ARGB));
+
+        JFrame frame = new JFrame();
+        frame.add(new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                g.drawImage(image.get(), 0, 0, this);
+            }
+        });
+
+        HeadlessUI ui = new HeadlessUI("roms/Super Mario Bros..nes", true);
         NES nes = new NES(ui);
         PuppetController controller1 = (PuppetController) nes.getcontroller1();
-        // NESFitnessEvaluator.loadSavestate(nes);
 
         CPURAM cpuram;
 
@@ -59,13 +67,11 @@ public class Playback {
             // Exact frame number until Mario gains control
             ui.runFrame();
 
-        int fitness = 0;
         int maxDistance = 0;
         int timeout = 0;
 
         while (true) {
-            Thread.sleep(5);
-            long startTime1 = System.nanoTime();
+            Thread.sleep(10);
             controller1.resetButtons();
 
             cpuram = nes.getCPURAM();
@@ -94,14 +100,13 @@ public class Playback {
                 timeout = 0;
             }
             // System.out.println("Lives: " + lives + " Timeout: " + timeout + " Distance: " + marioX);
-            if (lives <= 2 || timeout > 60 || marioState == 0x0B) {
-                fitness = points;
+            if (lives < 3 || timeout > 120 || marioState == 0x0B) {
                 break;
             }
 
             // System.out.println("Timeout: " + timeout + ", Time: " + time);
 
-            final int[][] vision = new int[13][13];
+            final int[][] vision = new int[visionSize][visionSize];
 
             for (int dx = -vision[0].length / 2; dx < vision[0].length / 2; dx += 1)
                 for (int dy = -vision.length / 2; dy < vision.length / 2; dy += 1) {
@@ -110,7 +115,7 @@ public class Playback {
                     int page = (int) FastMath.floor(x / 256) % 2;
                     int subx = (int) FastMath.floor((x % 256) / 16);
                     int suby = (int) FastMath.floor((y - 32) / 16);
-                    int addr = 0x500 + page * 13 * 16 + suby * 16 + subx;
+                    int addr = 0x500 + page * visionSize * 16 + suby * 16 + subx;
                     if (suby >= 13 || suby < 0) {
                         // System.out.println("Outside level.");
                         vision[dy + (vision.length / 2)][dx + (vision[0].length / 2)] = 0;
@@ -134,7 +139,7 @@ public class Playback {
                 }
             }
             double[] visionUnwound = unwind2DArray(vision);
-            double[] reactions = network.stepTime(visionUnwound);
+            double[] reactions = network.stepTime(visionUnwound, 5);
 
             if (reactions[0] > 0) controller1.pressButton(PuppetController.Button.UP);
             if (reactions[1] > 0) controller1.pressButton(PuppetController.Button.DOWN);
@@ -142,22 +147,12 @@ public class Playback {
             if (reactions[3] > 0) controller1.pressButton(PuppetController.Button.RIGHT);
             if (reactions[4] > 0) controller1.pressButton(PuppetController.Button.A);
             if (reactions[5] > 0) controller1.pressButton(PuppetController.Button.B);
-            // if (reactions[6] > 0) input.keyPressed(SELECT);
-            // if (reactions[7] > 0) input.keyPressed(START);
-
-            long startTime2 = System.nanoTime();
-            nes.frameAdvance();
-            // System.out.println("Took " + (System.nanoTime() - startTime2) / 1000000f + " ms to compute the NES, took " + (System.nanoTime() - startTime1)
-            // / 1000000f + "ms total.");
+            ui.runFrame();
+            image.set(ui.getLastFrame());
         }
-        // fitness -= candidate.getConnectionGeneList().size() * 100;
-        // fitness -= 5400; // The approximate minimum
-        // System.out.println("Finished one evaluation that took " + (System.nanoTime() - startTime) / 1000000000f + " seconds.");
-        // fitness = fitness >= 0 ? fitness : 0;
-        //System.exit(0);
     }
 
-    public static double[] unwind2DArray(int[][] arr) {
+    private static double[] unwind2DArray(int[][] arr) {
         double[] out = new double[arr.length * arr[0].length];
         int i = 0;
         for (int x = 0; x < arr[0].length; x++) {
