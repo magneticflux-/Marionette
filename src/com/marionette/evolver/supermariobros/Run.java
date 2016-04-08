@@ -3,7 +3,6 @@ package com.marionette.evolver.supermariobros;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Output;
 import com.grapeshot.halfnes.CPURAM;
-import com.grapeshot.halfnes.NES;
 import com.grapeshot.halfnes.ui.HeadlessUI;
 import com.grapeshot.halfnes.ui.PuppetController;
 import com.marionette.evolver.supermariobros.optimizationfunctions.NEATPhenomeSizeFunction;
@@ -46,7 +45,6 @@ import java.util.List;
  * Created by Mitchell on 3/13/2016.
  */
 public final class Run {
-    private static final ThreadLocal<NES> nes = new ThreadLocal<>();
     private static final ThreadLocal<HeadlessUI> ui = new ThreadLocal<>();
     private static final int visionSize = 11;
 
@@ -59,10 +57,10 @@ public final class Run {
                 .setValue(Key.DoubleKey.DefaultDoubleKey.INITIAL_ASPECT_ARRAY, new double[]{
                         .5, 1, // Crossover STR/PROB
                         4, 1, 1, // Speciator maxd/disj/exce
-                        0, .125, // Weight mutation
-                        1, .2, // Link addition
+                        0, .25, // Weight mutation
+                        1, .4, // Link addition
                         0, 0, // Link removal
-                        0, .1, // Link split
+                        0, .3, // Link split
                 })
                 .setValue(Key.DoubleKey.DefaultDoubleKey.ASPECT_MODIFICATION_ARRAY, new double[]{
                         .125 / 4, 1, // Crossover STR
@@ -83,7 +81,7 @@ public final class Run {
                 .setInt(NEATIntKey.INPUT_COUNT, visionSize * visionSize)
                 .setInt(NEATIntKey.OUTPUT_COUNT, 6)
                 .setInt(NEATIntKey.INITIAL_LINK_COUNT, 2)
-                .setDouble(NEATDoubleKey.NOVELTY_THRESHOLD, 100)
+                .setDouble(NEATDoubleKey.NOVELTY_THRESHOLD, 200)
                 .setInt(NEATIntKey.NOVELTY_DISTANCE_COUNT, 10);
 
         NEATPopulationGenerator neatPopulationGenerator = new NEATPopulationGenerator();
@@ -130,14 +128,11 @@ public final class Run {
     private static void computeFitness(NEATGenome candidate) {
 
         final NEATPhenome network = new NEATPhenome(candidate);
-        if (nes.get() == null || ui.get() == null) {
+        if (ui.get() == null) {
             ui.set(new HeadlessUI("roms/Super Mario Bros..nes", false));
-            nes.set(ui.get().getNes());
-            //nes.get().setControllers(new PuppetController(), new PuppetController());
         }
-        final NES nes = Run.nes.get();
         final HeadlessUI ui = Run.ui.get();
-        nes.reset();
+        ui.getNes().reset();
 
         CPURAM cpuram;
         PuppetController controller1 = ui.getController1();

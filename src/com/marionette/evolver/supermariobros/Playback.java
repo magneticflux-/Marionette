@@ -3,20 +3,25 @@ package com.marionette.evolver.supermariobros;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.grapeshot.halfnes.CPURAM;
-import com.grapeshot.halfnes.NES;
 import com.grapeshot.halfnes.ui.HeadlessUI;
 import com.grapeshot.halfnes.ui.PuppetController;
 import org.apache.commons.math3.util.FastMath;
+import org.javaneat.evolution.RunDemo;
 import org.javaneat.genome.NEATGenome;
 import org.javaneat.phenome.NEATPhenome;
+import org.jnsgaii.multiobjective.population.FrontedIndividual;
 import org.jnsgaii.population.PopulationData;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
+import javax.swing.WindowConstants;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 public final class Playback {
@@ -25,17 +30,7 @@ public final class Playback {
     private Playback() {
     }
 
-    @SuppressWarnings("MagicNumber")
-    public static void main(String[] args) throws InterruptedException, FileNotFoundException {
-        Kryo kryo = new Kryo();
-
-        Input in = new Input(new FileInputStream("generations/532.bin"));
-        @SuppressWarnings("unchecked")
-        PopulationData<NEATGenome> populationData = (PopulationData<NEATGenome>) kryo.readClassAndObject(in);
-        in.close();
-
-        NEATGenome genome = populationData.getTruncatedPopulation().getPopulation().get(0).getIndividual();
-
+    private static void startPlayback(NEATGenome genome) throws InterruptedException {
         NEATPhenome network = new NEATPhenome(genome);
 
         final AtomicReference<BufferedImage> image = new AtomicReference<>(new BufferedImage(10, 10, BufferedImage.TYPE_INT_ARGB));
@@ -45,13 +40,18 @@ public final class Playback {
             @Override
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
-                g.drawImage(image.get(), 0, 0, this);
+                if (image.get() != null)
+                    g.drawImage(image.get(), 0, 0, image.get().getWidth() * 3, image.get().getHeight() * 3, this);
             }
         });
+        frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+        frame.setVisible(true);
+        frame.setSize(800, 800);
 
         HeadlessUI ui = new HeadlessUI("roms/Super Mario Bros..nes", true);
-        NES nes = new NES(ui);
-        PuppetController controller1 = (PuppetController) nes.getcontroller1();
+        PuppetController controller1 = ui.getController1();
+
+        ui.getNes().reset();
 
         CPURAM cpuram;
 
@@ -71,10 +71,10 @@ public final class Playback {
         int timeout = 0;
 
         while (true) {
-            Thread.sleep(10);
+            long startTimeMS = System.currentTimeMillis();
             controller1.resetButtons();
 
-            cpuram = nes.getCPURAM();
+            cpuram = ui.getNESCPURAM();
 
             int score = 0;
             int time = 0;
@@ -90,9 +90,9 @@ public final class Playback {
                 time += cpuram._read(i) * FastMath.pow(10, (0x07FA - i));
 
             int points = ((time - 400) * 10) + (marioX / 2) + (level * 250) + (world * 2000);
-            System.out.println(String.format("Points: %d, Time: %d, Score: %d, World: %d, Level: %d, Lives: %d, MarioX: %d, MarioY: %d"
-                            + (nes.getCPURAM().read(0x000E) == 0x0B ? ", DYING" : ", STATE: " + nes.getCPURAM().read(0x000E)), points, time, score, world, level,
-                    lives, marioX, marioY));
+            /*System.out.println(String.format("Points: %d, Time: %d, Score: %d, World: %d, Level: %d, Lives: %d, MarioX: %d, MarioY: %d"
+                            + (cpuram.read(0x000E) == 0x0B ? ", DYING" : ", STATE: " + cpuram.read(0x000E)), points, time, score, world, level,
+                    lives, marioX, marioY));*/
 
             timeout++;
             if (marioX > maxDistance) {
@@ -101,7 +101,26 @@ public final class Playback {
             }
             // System.out.println("Lives: " + lives + " Timeout: " + timeout + " Distance: " + marioX);
             if (lives < 3 || timeout > 120 || marioState == 0x0B) {
-                break;
+                //break;
+                ui.getNes().reset();
+                controller1.resetButtons();
+
+                for (int i = 0; i < 31; i++)
+                    // Exact frame number until it can begin.
+                    ui.runFrame();
+
+                controller1.pressButton(PuppetController.Button.START);
+                ui.runFrame();
+                controller1.releaseButton(PuppetController.Button.START);
+
+                for (int i = 0; i < 162; i++)
+                    // Exact frame number until Mario gains control
+                    ui.runFrame();
+
+                timeout = 0;
+                maxDistance = 0;
+                System.out.println("Continuing");
+                continue;
             }
 
             // System.out.println("Timeout: " + timeout + ", Time: " + time);
@@ -116,7 +135,7 @@ public final class Playback {
                     int subx = (int) FastMath.floor((x % 256) / 16);
                     int suby = (int) FastMath.floor((y - 32) / 16);
                     int addr = 0x500 + page * visionSize * 16 + suby * 16 + subx;
-                    if (suby >= 13 || suby < 0) {
+                    if (suby >= visionSize || suby < 0) {
                         // System.out.println("Outside level.");
                         vision[dy + (vision.length / 2)][dx + (vision[0].length / 2)] = 0;
                     } else {
@@ -133,12 +152,13 @@ public final class Playback {
                     int enemyMarioDeltaX = (ex - marioX) / 16;
                     int enemyMarioDeltaY = (ey - marioY) / 16;
                     try {
-                        vision[enemyMarioDeltaY + (vision.length / 2)][enemyMarioDeltaX + (vision[0].length / 2)] = -1;
+                        vision[enemyMarioDeltaY + (vision.length / 2)][enemyMarioDeltaX + (vision[0].length / 2)] = -enemy;
                     } catch (ArrayIndexOutOfBoundsException ignored) {
                     }
                 }
             }
-            double[] visionUnwound = unwind2DArray(vision);
+
+            double[] visionUnwound = RunDemo.NESFitness.unwind2DArray(vision);
             double[] reactions = network.stepTime(visionUnwound, 5);
 
             if (reactions[0] > 0) controller1.pressButton(PuppetController.Button.UP);
@@ -149,7 +169,33 @@ public final class Playback {
             if (reactions[5] > 0) controller1.pressButton(PuppetController.Button.B);
             ui.runFrame();
             image.set(ui.getLastFrame());
+            frame.repaint();
+
+            long elapsedTimeMS = System.currentTimeMillis() - startTimeMS;
+            //if (16 - elapsedTimeMS > 0)
+            //    Thread.sleep(16 - elapsedTimeMS);
         }
+        //Thread.sleep(2000);
+        //frame.dispose();
+    }
+
+    @SuppressWarnings("MagicNumber")
+    public static void main(String[] args) throws FileNotFoundException, InterruptedException {
+        Kryo kryo = new Kryo();
+
+        Input in = new Input(new FileInputStream("generations/318.bin"));
+        @SuppressWarnings("unchecked")
+        PopulationData<NEATGenome> populationData = (PopulationData<NEATGenome>) kryo.readClassAndObject(in);
+        in.close();
+
+        List<FrontedIndividual<NEATGenome>> genomes = new ArrayList<>(populationData.getTruncatedPopulation().getPopulation());
+        genomes.sort((o1, o2) -> -Double.compare(o1.getScore(1), o2.getScore(1)));
+
+        System.out.println(Arrays.toString(genomes.get(0).getScores()));
+        assert genomes.get(0).getIndividual().marioBrosData != null;
+        genomes.get(0).getIndividual().marioBrosData.dataPoints.forEach(System.out::println);
+
+        startPlayback(genomes.get(0).getIndividual());
     }
 
     private static double[] unwind2DArray(int[][] arr) {
