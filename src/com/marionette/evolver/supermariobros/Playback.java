@@ -7,6 +7,7 @@ import com.grapeshot.halfnes.ui.HeadlessUI;
 import com.grapeshot.halfnes.ui.PuppetController;
 import org.apache.commons.math3.util.FastMath;
 import org.javaneat.evolution.RunDemo;
+import org.javaneat.evolution.nsgaii.MarioBrosData;
 import org.javaneat.genome.NEATGenome;
 import org.javaneat.phenome.NEATPhenome;
 import org.jnsgaii.multiobjective.population.FrontedIndividual;
@@ -30,9 +31,8 @@ public final class Playback {
     private Playback() {
     }
 
+    @SuppressWarnings("MagicNumber")
     private static void startPlayback(NEATGenome genome) throws InterruptedException {
-        NEATPhenome network = new NEATPhenome(genome);
-
         final AtomicReference<BufferedImage> image = new AtomicReference<>(new BufferedImage(10, 10, BufferedImage.TYPE_INT_ARGB));
 
         JFrame frame = new JFrame();
@@ -48,12 +48,14 @@ public final class Playback {
         frame.setVisible(true);
         frame.setSize(800, 800);
 
+        final NEATPhenome network = new NEATPhenome(genome);
         HeadlessUI ui = new HeadlessUI("roms/Super Mario Bros..nes", true);
-        PuppetController controller1 = ui.getController1();
-
         ui.getNes().reset();
 
         CPURAM cpuram;
+        PuppetController controller1 = ui.getController1();
+
+        boolean goesRight = genome.getConnectionGeneList().stream().anyMatch(connectionGene -> connectionGene.getToNode() == genome.getManager().getOutputOffset() + 3);
 
         for (int i = 0; i < 31; i++)
             // Exact frame number until it can begin.
@@ -69,9 +71,13 @@ public final class Playback {
 
         int maxDistance = 0;
         int timeout = 0;
+        int currentFrame = 0;
+
+        MarioBrosData data = new MarioBrosData();
 
         while (true) {
             long startTimeMS = System.currentTimeMillis();
+
             controller1.resetButtons();
 
             cpuram = ui.getNESCPURAM();
@@ -89,41 +95,20 @@ public final class Playback {
             for (int i = 0x07F8; i <= 0x07FA; i++)
                 time += cpuram._read(i) * FastMath.pow(10, (0x07FA - i));
 
-            int points = ((time - 400) * 10) + (marioX / 2) + (level * 250) + (world * 2000);
-            /*System.out.println(String.format("Points: %d, Time: %d, Score: %d, World: %d, Level: %d, Lives: %d, MarioX: %d, MarioY: %d"
-                            + (cpuram.read(0x000E) == 0x0B ? ", DYING" : ", STATE: " + cpuram.read(0x000E)), points, time, score, world, level,
-                    lives, marioX, marioY));*/
+            if (currentFrame % 30 == 0) {
+                data.addDataPoint(new MarioBrosData.DataPoint(score, time, world, level, lives, marioX, marioY, marioState));
+            }
 
+            currentFrame++;
             timeout++;
             if (marioX > maxDistance) {
                 maxDistance = marioX;
                 timeout = 0;
             }
-            // System.out.println("Lives: " + lives + " Timeout: " + timeout + " Distance: " + marioX);
-            if (lives < 3 || timeout > 120 || marioState == 0x0B) {
-                //break;
-                ui.getNes().reset();
-                controller1.resetButtons();
-
-                for (int i = 0; i < 31; i++)
-                    // Exact frame number until it can begin.
-                    ui.runFrame();
-
-                controller1.pressButton(PuppetController.Button.START);
-                ui.runFrame();
-                controller1.releaseButton(PuppetController.Button.START);
-
-                for (int i = 0; i < 162; i++)
-                    // Exact frame number until Mario gains control
-                    ui.runFrame();
-
-                timeout = 0;
-                maxDistance = 0;
-                System.out.println("Continuing");
-                continue;
+            if (lives < 3 || timeout > 120 || marioState == 0x0B || !goesRight) {
+                //System.out.println(lives + " " + timeout + " " + marioState + " " + goesRight + " " + marioX);
+                break;
             }
-
-            // System.out.println("Timeout: " + timeout + ", Time: " + time);
 
             final int[][] vision = new int[visionSize][visionSize];
 
@@ -139,8 +124,8 @@ public final class Playback {
                         // System.out.println("Outside level.");
                         vision[dy + (vision.length / 2)][dx + (vision[0].length / 2)] = 0;
                     } else {
-                        // System.out.println("Block data at " + dx + ", " + dy + ": " + cpuram.read(addr));
-                        vision[dy + (vision.length / 2)][dx + (vision[0].length / 2)] = cpuram.read(addr) == 0 ? 0 : 1;
+                        // System.out.println("Block data at " + dx + ", " + dy + ": " + nes.cpuram.read(addr));
+                        vision[dy + (vision.length / 2)][dx + (vision[0].length / 2)] = cpuram.read(addr);
                     }
                 }
 
@@ -167,16 +152,19 @@ public final class Playback {
             if (reactions[3] > 0) controller1.pressButton(PuppetController.Button.RIGHT);
             if (reactions[4] > 0) controller1.pressButton(PuppetController.Button.A);
             if (reactions[5] > 0) controller1.pressButton(PuppetController.Button.B);
+            // if (reactions[6] > 0) input.keyPressed(SELECT);
+            // if (reactions[7] > 0) input.keyPressed(START);
+
             ui.runFrame();
             image.set(ui.getLastFrame());
             frame.repaint();
 
             long elapsedTimeMS = System.currentTimeMillis() - startTimeMS;
-            //if (16 - elapsedTimeMS > 0)
-            //    Thread.sleep(16 - elapsedTimeMS);
+            if (16 - elapsedTimeMS > 0)
+                Thread.sleep(16 - elapsedTimeMS);
         }
-        //Thread.sleep(2000);
-        //frame.dispose();
+        Thread.sleep(2000);
+        frame.dispose();
     }
 
     @SuppressWarnings("MagicNumber")
