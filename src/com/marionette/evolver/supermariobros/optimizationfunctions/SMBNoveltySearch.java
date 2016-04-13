@@ -26,6 +26,9 @@ public class SMBNoveltySearch implements OptimizationFunction<NEATGenome> {
 
     private final Collection<MarioBrosData> history = new ArrayList<>();
 
+    public SMBNoveltySearch() {
+    }
+
     private static double getDistance(MarioBrosData data1, MarioBrosData data2) {
         double sum = 0;
 
