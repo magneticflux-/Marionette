@@ -1,6 +1,7 @@
 package com.marionette.evolver.supermariobros;
 
 import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import com.grapeshot.halfnes.CPURAM;
 import com.grapeshot.halfnes.ui.HeadlessUI;
@@ -30,16 +31,19 @@ import org.jnsgaii.operators.DefaultOperator;
 import org.jnsgaii.operators.Mutator;
 import org.jnsgaii.operators.Recombiner;
 import org.jnsgaii.operators.Selector;
+import org.jnsgaii.population.PopulationData;
 import org.jnsgaii.population.individual.Individual;
 import org.jnsgaii.properties.Key;
 import org.jnsgaii.properties.Properties;
 import org.jnsgaii.visualization.DefaultVisualization;
 
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Created by Mitchell on 3/13/2016.
@@ -47,11 +51,15 @@ import java.util.List;
 public final class Run {
     private static final ThreadLocal<HeadlessUI> ui = new ThreadLocal<>();
     private static final int visionSize = 11;
+    private static final int generationToLoad = 926;
 
     private Run() {
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws FileNotFoundException {
+        Kryo kryo = new Kryo();
+        @SuppressWarnings("unchecked") PopulationData<NEATGenome> loadedPopulation = (PopulationData<NEATGenome>) kryo.readClassAndObject(new Input(new FileInputStream("generations/" + generationToLoad + ".bin")));
+
         //noinspection MagicNumber
         Properties properties = new Properties()
                 .setValue(Key.DoubleKey.DefaultDoubleKey.INITIAL_ASPECT_ARRAY, new double[]{
@@ -63,28 +71,28 @@ public final class Run {
                         0, .3, // Link split
                 })
                 .setValue(Key.DoubleKey.DefaultDoubleKey.ASPECT_MODIFICATION_ARRAY, new double[]{
-                        .125 / 4, 1, // Crossover STR
-                        .125 / 4, 1, // Crossover PROB
-                        .125 / 4, 1, // Speciator MAX MATING DISTANCE
-                        .125 / 4, 1, // Speciator DISJOINT COEFFICIENT
-                        .125 / 4, 1, // Speciator EXCESS COEFFICIENT
-                        .125 / 4, 1, // Weight mutation STR
+                        .125 / 2, 1, // Crossover STR
+                        .125 / 2, 1, // Crossover PROB
+                        .125 / 1, 1, // Speciator MAX MATING DISTANCE
+                        .125 / 2, 1, // Speciator DISJOINT COEFFICIENT
+                        .125 / 2, 1, // Speciator EXCESS COEFFICIENT
+                        .125 / 2, 1, // Weight mutation STR
                         .125 / 4, 1, // Weight mutation PROB
-                        .125 / 4, 1, // Link addition STR
+                        .125 / 2, 1, // Link addition STR
                         .125 / 4, 1, // Link addition PROB
                         .125 / 4, 1, // Link removal STR
                         .125 / 4, 1, // Link removal PROB
-                        .125 / 4, 1, // Link split STR
-                        .125 / 4, 1, // Link split PROB
+                        .125 / 2, 1, // Link split STR
+                        .125 / 2, 1, // Link split PROB
                 })
                 .setInt(Key.IntKey.DefaultIntKey.POPULATION_SIZE, 100)
                 .setInt(NEATIntKey.INPUT_COUNT, visionSize * visionSize)
                 .setInt(NEATIntKey.OUTPUT_COUNT, 6)
                 .setInt(NEATIntKey.INITIAL_LINK_COUNT, 2)
-                .setDouble(NEATDoubleKey.NOVELTY_THRESHOLD, 200)
+                .setDouble(NEATDoubleKey.NOVELTY_THRESHOLD, 10)
                 .setInt(NEATIntKey.NOVELTY_DISTANCE_COUNT, 10);
 
-        NEATPopulationGenerator neatPopulationGenerator = new NEATPopulationGenerator();
+        NEATPopulationGenerator neatPopulationGenerator = new NEATPopulationGenerator(loadedPopulation.getTruncatedPopulation().getPopulation().stream().map(individual -> new Individual<>(individual.getIndividual(), individual.aspects)).collect(Collectors.toList()));
 
         NEATSpeciator neatSpeciator = new NEATSpeciator();
         List<Mutator<NEATGenome>> mutators = Arrays.asList(new NEATWeightMutator(), new NEATLinkAdditionMutator(), new NEATLinkRemovalMutator(), new NEATLinkSplitMutator());
@@ -92,9 +100,11 @@ public final class Run {
         Selector<NEATGenome> selector = new RouletteWheelLinearSelection<>();
         DefaultOperator<NEATGenome> operator = new DefaultOperator<>(mutators, recombiner, selector, neatSpeciator);
 
-        List<OptimizationFunction<NEATGenome>> optimizationFunctions = Arrays.asList(new SMBNoveltySearch(), new SMBDistanceFunction(), new SMBScoreFunction(), new NEATPhenomeSizeFunction());
+        SMBNoveltySearch noveltySearch = (SMBNoveltySearch) kryo.readClassAndObject(new Input(new FileInputStream("generations/" + generationToLoad + "_novelty.bin")));
 
-        NSGA_II<NEATGenome> nsga_ii = new NSGA_II<>(properties, operator, optimizationFunctions, neatPopulationGenerator);
+        List<OptimizationFunction<NEATGenome>> optimizationFunctions = Arrays.asList(noveltySearch, new SMBDistanceFunction(), new SMBScoreFunction(), new NEATPhenomeSizeFunction());
+
+        NSGA_II<NEATGenome> nsga_ii = new NSGA_II<>(properties, operator, optimizationFunctions, neatPopulationGenerator, generationToLoad);
 
         nsga_ii.addObserver(populationData -> {
             System.out.println("Max distance = " + populationData.getTruncatedPopulation().getPopulation().parallelStream().mapToDouble(value -> {
@@ -103,10 +113,13 @@ public final class Run {
             }).max().orElse(Double.NaN));
 
             try {
-                Kryo kryo = new Kryo();
-                Output out = new Output(new FileOutputStream("generations/" + populationData.getCurrentGeneration() + ".bin"));
-                kryo.writeClassAndObject(out, populationData);
-                out.close();
+                Output out1 = new Output(new FileOutputStream("generations/" + populationData.getCurrentGeneration() + ".bin"));
+                Output out2 = new Output(new FileOutputStream("generations/" + populationData.getCurrentGeneration() + "_novelty.bin"));
+                kryo.writeClassAndObject(out1, populationData);
+                kryo.writeClassAndObject(out2, noveltySearch);
+
+                out1.close();
+                out2.close();
             } catch (FileNotFoundException e) {
                 e.printStackTrace();
             }
@@ -180,12 +193,13 @@ public final class Run {
             }
 
             currentFrame++;
-            timeout++;
+            if (marioState == 8)
+                timeout++;
             if (marioX > maxDistance) {
                 maxDistance = marioX;
                 timeout = 0;
             }
-            if (lives < 3 || timeout > 120 || marioState == 0x0B || !goesRight) {
+            if (lives < 3 || timeout > 240 || marioState == 0x0B || !goesRight) {
                 //System.out.println(lives + " " + timeout + " " + marioState + " " + goesRight + " " + marioX);
                 break;
             }
