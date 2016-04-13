@@ -12,6 +12,7 @@ import org.uncommons.watchmaker.framework.FitnessEvaluator;
 
 import java.util.List;
 
+@Deprecated
 public class SuperMarioBrosFitness implements FitnessEvaluator<NEATGenome> {
     private ThreadLocal<NES> nes = new ThreadLocal<>();
     private ThreadLocal<HeadlessUI> ui = new ThreadLocal<>();
