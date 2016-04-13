@@ -41,12 +41,12 @@ public final class Playback {
             protected void paintComponent(Graphics g) {
                 super.paintComponent(g);
                 if (image.get() != null)
-                    g.drawImage(image.get(), 0, 0, image.get().getWidth() * 3, image.get().getHeight() * 3, this);
+                    g.drawImage(image.get(), 0, 0, image.get().getWidth() * 4, image.get().getHeight() * 4, this);
             }
         });
         frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         frame.setVisible(true);
-        frame.setSize(800, 800);
+        frame.setSize(1100, 1000);
 
         final NEATPhenome network = new NEATPhenome(genome);
         HeadlessUI ui = new HeadlessUI("roms/Super Mario Bros..nes", true);
@@ -77,7 +77,6 @@ public final class Playback {
 
         while (true) {
             long startTimeMS = System.currentTimeMillis();
-
             controller1.resetButtons();
 
             cpuram = ui.getNESCPURAM();
@@ -100,12 +99,13 @@ public final class Playback {
             }
 
             currentFrame++;
-            timeout++;
+            if (marioState == 8)
+                timeout++;
             if (marioX > maxDistance) {
                 maxDistance = marioX;
                 timeout = 0;
             }
-            if (lives < 3 || timeout > 120 || marioState == 0x0B || !goesRight) {
+            if (lives < 3 || timeout > 240 || marioState == 0x0B || !goesRight) {
                 //System.out.println(lives + " " + timeout + " " + marioState + " " + goesRight + " " + marioX);
                 break;
             }
@@ -171,7 +171,7 @@ public final class Playback {
     public static void main(String[] args) throws FileNotFoundException, InterruptedException {
         Kryo kryo = new Kryo();
 
-        Input in = new Input(new FileInputStream("generations/318.bin"));
+        Input in = new Input(new FileInputStream("generations/906.bin"));
         @SuppressWarnings("unchecked")
         PopulationData<NEATGenome> populationData = (PopulationData<NEATGenome>) kryo.readClassAndObject(in);
         in.close();
@@ -179,22 +179,11 @@ public final class Playback {
         List<FrontedIndividual<NEATGenome>> genomes = new ArrayList<>(populationData.getTruncatedPopulation().getPopulation());
         genomes.sort((o1, o2) -> -Double.compare(o1.getScore(1), o2.getScore(1)));
 
-        System.out.println(Arrays.toString(genomes.get(0).getScores()));
-        assert genomes.get(0).getIndividual().marioBrosData != null;
-        genomes.get(0).getIndividual().marioBrosData.dataPoints.forEach(System.out::println);
+        FrontedIndividual<NEATGenome> individual = genomes.get(0);
 
-        startPlayback(genomes.get(0).getIndividual());
-    }
+        System.out.println(Arrays.toString(individual.getScores()));
+        individual.getIndividual().marioBrosData.dataPoints.forEach(System.out::println);
 
-    private static double[] unwind2DArray(int[][] arr) {
-        double[] out = new double[arr.length * arr[0].length];
-        int i = 0;
-        for (int x = 0; x < arr[0].length; x++) {
-            for (int[] anArr : arr) {
-                out[i] = anArr[x];
-                i++;
-            }
-        }
-        return out;
+        startPlayback(individual.getIndividual());
     }
 }
