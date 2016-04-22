@@ -12,10 +12,12 @@ import org.javaneat.genome.NEATGenome;
 import org.javaneat.phenome.NEATPhenome;
 import org.jnsgaii.multiobjective.population.FrontedIndividual;
 import org.jnsgaii.population.PopulationData;
+import org.jnsgaii.population.individual.Individual;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.WindowConstants;
+import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 import java.io.FileInputStream;
@@ -33,7 +35,7 @@ public final class Playback {
 
     @SuppressWarnings("MagicNumber")
     private static void startPlayback(NEATGenome genome) throws InterruptedException {
-        final AtomicReference<BufferedImage> image = new AtomicReference<>(new BufferedImage(10, 10, BufferedImage.TYPE_INT_ARGB));
+        final AtomicReference<BufferedImage> image = new AtomicReference<>(new BufferedImage(256, 224, BufferedImage.TYPE_INT_ARGB));
 
         JFrame frame = new JFrame();
         frame.add(new JPanel() {
@@ -43,10 +45,15 @@ public final class Playback {
                 if (image.get() != null)
                     g.drawImage(image.get(), 0, 0, image.get().getWidth() * 4, image.get().getHeight() * 4, this);
             }
+
+            @Override
+            public Dimension getPreferredSize() {
+                return new Dimension(image.get().getWidth() * 4, image.get().getHeight() * 4);
+            }
         });
         frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+        frame.pack();
         frame.setVisible(true);
-        frame.setSize(1100, 1000);
 
         final NEATPhenome network = new NEATPhenome(genome);
         HeadlessUI ui = new HeadlessUI("roms/Super Mario Bros..nes", true);
@@ -74,7 +81,6 @@ public final class Playback {
         int currentFrame = 0;
 
         MarioBrosData data = new MarioBrosData();
-
         while (true) {
             long startTimeMS = System.currentTimeMillis();
             controller1.resetButtons();
@@ -171,19 +177,22 @@ public final class Playback {
     public static void main(String[] args) throws FileNotFoundException, InterruptedException {
         Kryo kryo = new Kryo();
 
-        Input in = new Input(new FileInputStream("generations/906.bin"));
+        Input in = new Input(new FileInputStream("D:/Science Fair/Run 2/1750.bin"));
         @SuppressWarnings("unchecked")
         PopulationData<NEATGenome> populationData = (PopulationData<NEATGenome>) kryo.readClassAndObject(in);
         in.close();
 
         List<FrontedIndividual<NEATGenome>> genomes = new ArrayList<>(populationData.getTruncatedPopulation().getPopulation());
+        //final int[] scoreOrder = {0, 3, 2, 1}; // Least to most important
+        //for (int i : scoreOrder)
         genomes.sort((o1, o2) -> -Double.compare(o1.getScore(1), o2.getScore(1)));
 
         FrontedIndividual<NEATGenome> individual = genomes.get(0);
 
         System.out.println(Arrays.toString(individual.getScores()));
         individual.getIndividual().marioBrosData.dataPoints.forEach(System.out::println);
-
-        startPlayback(individual.getIndividual());
+        System.out.println(individual.getIndividual().marioBrosData.dataPoints.get(0).world);
+        for (Individual<NEATGenome> i : genomes)
+            startPlayback(i.getIndividual());
     }
 }

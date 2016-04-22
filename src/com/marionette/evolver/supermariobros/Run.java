@@ -6,10 +6,10 @@ import com.esotericsoftware.kryo.io.Output;
 import com.grapeshot.halfnes.CPURAM;
 import com.grapeshot.halfnes.ui.HeadlessUI;
 import com.grapeshot.halfnes.ui.PuppetController;
-import com.marionette.evolver.supermariobros.optimizationfunctions.NEATPhenomeSizeFunction;
 import com.marionette.evolver.supermariobros.optimizationfunctions.SMBDistanceFunction;
 import com.marionette.evolver.supermariobros.optimizationfunctions.SMBNoveltySearch;
 import com.marionette.evolver.supermariobros.optimizationfunctions.SMBScoreFunction;
+import com.marionette.evolver.supermariobros.optimizationfunctions.SMBSpeedFunction;
 import org.apache.commons.math3.util.FastMath;
 import org.javaneat.evolution.RunDemo;
 import org.javaneat.evolution.nsgaii.MarioBrosData;
@@ -51,7 +51,7 @@ import java.util.stream.Collectors;
 public final class Run {
     private static final ThreadLocal<HeadlessUI> ui = new ThreadLocal<>();
     private static final int visionSize = 11;
-    private static final int generationToLoad = 926;
+    private static final int generationToLoad = 1750;
 
     private Run() {
     }
@@ -65,10 +65,10 @@ public final class Run {
                 .setValue(Key.DoubleKey.DefaultDoubleKey.INITIAL_ASPECT_ARRAY, new double[]{
                         .5, 1, // Crossover STR/PROB
                         4, 1, 1, // Speciator maxd/disj/exce
-                        0, .25, // Weight mutation
+                        1, .25, // Weight mutation
                         1, .4, // Link addition
                         0, 0, // Link removal
-                        0, .3, // Link split
+                        .1, .3, // Link split
                 })
                 .setValue(Key.DoubleKey.DefaultDoubleKey.ASPECT_MODIFICATION_ARRAY, new double[]{
                         .125 / 2, 1, // Crossover STR
@@ -102,7 +102,7 @@ public final class Run {
 
         SMBNoveltySearch noveltySearch = (SMBNoveltySearch) kryo.readClassAndObject(new Input(new FileInputStream("generations/" + generationToLoad + "_novelty.bin")));
 
-        List<OptimizationFunction<NEATGenome>> optimizationFunctions = Arrays.asList(noveltySearch, new SMBDistanceFunction(), new SMBScoreFunction(), new NEATPhenomeSizeFunction());
+        List<OptimizationFunction<NEATGenome>> optimizationFunctions = Arrays.asList(noveltySearch, new SMBDistanceFunction(), new SMBScoreFunction(), new SMBSpeedFunction());
 
         NSGA_II<NEATGenome> nsga_ii = new NSGA_II<>(properties, operator, optimizationFunctions, neatPopulationGenerator, generationToLoad);
 
@@ -251,6 +251,10 @@ public final class Run {
 
             ui.runFrame();
         }
+
+        if (data.dataPoints.size() < 2)
+            data.dataPoints.add(new MarioBrosData.DataPoint(data.dataPoints.get(0)));
+
         candidate.marioBrosData = data;
     }
 

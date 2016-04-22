@@ -23,8 +23,8 @@ public class NEATPhenomeSizeFunction extends DefaultOptimizationFunction<NEATGen
 
     @Override
     public double evaluateIndividual(NEATGenome object, Properties properties) {
-        return object.getConnectionGeneList().parallelStream().filter(ConnectionGene::getEnabled).count() +
-                object.getNeuronGeneList().parallelStream().filter(neuronGene -> neuronGene.getNeuronType() == NeuronType.HIDDEN).count();
+        return object.getConnectionGeneList().stream().filter(ConnectionGene::getEnabled).count() +
+                object.getNeuronGeneList().stream().filter(neuronGene -> neuronGene.getNeuronType() == NeuronType.HIDDEN).count();
     }
 
     @Override
@@ -34,7 +34,7 @@ public class NEATPhenomeSizeFunction extends DefaultOptimizationFunction<NEATGen
 
     @Override
     public double max(Properties properties) {
-        return 25;
+        return 1000;
     }
 
     @Override
