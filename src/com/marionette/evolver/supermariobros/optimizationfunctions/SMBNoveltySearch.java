@@ -77,6 +77,8 @@ public class SMBNoveltySearch implements OptimizationFunction<NEATGenome> {
         double average = distances.stream().limit(numDistances).mapToDouble(value -> value).average().orElseGet(() -> Double.NaN);
         if (average > properties.getDouble(NEATDoubleKey.NOVELTY_THRESHOLD))
             history.add(individual.marioBrosData);
+        if (average < 10)
+            return 0;
         return average;
     }
 
@@ -87,7 +89,7 @@ public class SMBNoveltySearch implements OptimizationFunction<NEATGenome> {
 
     @Override
     public double max(Properties properties) {
-        return 10;
+        return 1000;
     }
 
     @Override

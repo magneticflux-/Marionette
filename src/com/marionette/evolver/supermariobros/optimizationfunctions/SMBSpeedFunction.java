@@ -10,10 +10,9 @@ import org.jnsgaii.properties.Properties;
 import java.util.List;
 
 /**
- * Created by Mitchell on 3/25/2016.
+ * Created by Mitchell on 4/14/2016.
  */
-public class SMBScoreFunction extends DefaultOptimizationFunction<NEATGenome> {
-
+public class SMBSpeedFunction extends DefaultOptimizationFunction<NEATGenome> {
     @Override
     public double[] evaluate(List<Individual<NEATGenome>> individuals, Properties properties) {
         Run.verifyScores(individuals);
@@ -27,7 +26,7 @@ public class SMBScoreFunction extends DefaultOptimizationFunction<NEATGenome> {
 
     @Override
     public double max(Properties properties) {
-        return 1500;
+        return 50;
     }
 
     @Override
@@ -37,7 +36,14 @@ public class SMBScoreFunction extends DefaultOptimizationFunction<NEATGenome> {
 
     @Override
     public double evaluateIndividual(NEATGenome object, Properties properties) {
-        return object.marioBrosData.dataPoints.parallelStream().mapToInt(value -> value.score).max().orElseGet(() -> -1);
+        int start = object.marioBrosData.dataPoints.get(0).marioX;
+        int end = object.marioBrosData.dataPoints.get(object.marioBrosData.dataPoints.size() - 1).marioX;
+        int distance = end - start;
+        int time = object.marioBrosData.dataPoints.get(0).time - object.marioBrosData.dataPoints.get(object.marioBrosData.dataPoints.size() - 1).time;
+        if (time != 0)
+            return distance / (double) time;
+        else
+            return 0;
     }
 
     @Override

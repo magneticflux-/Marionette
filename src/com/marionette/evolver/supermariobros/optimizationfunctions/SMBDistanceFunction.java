@@ -27,7 +27,7 @@ public class SMBDistanceFunction extends DefaultOptimizationFunction<NEATGenome>
 
     @Override
     public double max(Properties properties) {
-        return 2000;
+        return 3000;
     }
 
     @Override
@@ -37,7 +37,7 @@ public class SMBDistanceFunction extends DefaultOptimizationFunction<NEATGenome>
 
     @Override
     public double evaluateIndividual(NEATGenome object, Properties properties) {
-        return object.marioBrosData.dataPoints.parallelStream().mapToInt(value -> value.marioX).max().orElseGet(() -> -1);
+        return object.marioBrosData.dataPoints.parallelStream().mapToInt(value -> value.marioX).max().orElse(0) + object.marioBrosData.dataPoints.parallelStream().mapToInt(value -> value.world).max().orElse(0) * 3000;
     }
 
     @Override
