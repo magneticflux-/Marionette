@@ -177,7 +177,7 @@ public final class Playback {
     public static void main(String[] args) throws FileNotFoundException, InterruptedException {
         Kryo kryo = new Kryo();
 
-        Input in = new Input(new FileInputStream("D:/Science Fair/Run 2/1750.bin"));
+        Input in = new Input(new FileInputStream("generations/2048.bin"));
         @SuppressWarnings("unchecked")
         PopulationData<NEATGenome> populationData = (PopulationData<NEATGenome>) kryo.readClassAndObject(in);
         in.close();
