@@ -9,7 +9,6 @@ import com.grapeshot.halfnes.ui.PuppetController;
 import com.marionette.evolver.supermariobros.optimizationfunctions.SMBDistanceFunction;
 import com.marionette.evolver.supermariobros.optimizationfunctions.SMBNoveltySearch;
 import com.marionette.evolver.supermariobros.optimizationfunctions.SMBScoreFunction;
-import com.marionette.evolver.supermariobros.optimizationfunctions.SMBSpeedFunction;
 import org.apache.commons.math3.util.FastMath;
 import org.javaneat.evolution.RunDemo;
 import org.javaneat.evolution.nsgaii.MarioBrosData;
@@ -25,7 +24,7 @@ import org.javaneat.evolution.nsgaii.mutators.NEATWeightMutator;
 import org.javaneat.genome.NEATGenome;
 import org.javaneat.phenome.NEATPhenome;
 import org.jnsgaii.OptimizationFunction;
-import org.jnsgaii.examples.defaultoperatorframework.RouletteWheelLinearSelection;
+import org.jnsgaii.examples.defaultoperatorframework.RouletteWheelSquareRootSelection;
 import org.jnsgaii.multiobjective.NSGA_II;
 import org.jnsgaii.operators.DefaultOperator;
 import org.jnsgaii.operators.Mutator;
@@ -51,7 +50,7 @@ import java.util.stream.Collectors;
 public final class Run {
     private static final ThreadLocal<HeadlessUI> ui = new ThreadLocal<>();
     private static final int visionSize = 11;
-    private static final int generationToLoad = 1750;
+    private static final int generationToLoad = 2048;
 
     private Run() {
     }
@@ -97,12 +96,12 @@ public final class Run {
         NEATSpeciator neatSpeciator = new NEATSpeciator();
         List<Mutator<NEATGenome>> mutators = Arrays.asList(new NEATWeightMutator(), new NEATLinkAdditionMutator(), new NEATLinkRemovalMutator(), new NEATLinkSplitMutator());
         Recombiner<NEATGenome> recombiner = new NEATRecombiner();
-        Selector<NEATGenome> selector = new RouletteWheelLinearSelection<>();
+        Selector<NEATGenome> selector = new RouletteWheelSquareRootSelection<>();
         DefaultOperator<NEATGenome> operator = new DefaultOperator<>(mutators, recombiner, selector, neatSpeciator);
 
         SMBNoveltySearch noveltySearch = (SMBNoveltySearch) kryo.readClassAndObject(new Input(new FileInputStream("generations/" + generationToLoad + "_novelty.bin")));
 
-        List<OptimizationFunction<NEATGenome>> optimizationFunctions = Arrays.asList(noveltySearch, new SMBDistanceFunction(), new SMBScoreFunction(), new SMBSpeedFunction());
+        List<OptimizationFunction<NEATGenome>> optimizationFunctions = Arrays.asList(noveltySearch, new SMBDistanceFunction(), new SMBScoreFunction());
 
         NSGA_II<NEATGenome> nsga_ii = new NSGA_II<>(properties, operator, optimizationFunctions, neatPopulationGenerator, generationToLoad);
 
