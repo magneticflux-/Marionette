@@ -1,3 +1,5 @@
+[![](https://jitpack.io/v/magneticflux-/Marionette.svg)](https://jitpack.io/#magneticflux-/Marionette)
+
 # Marionette
 
 Marionette is designed to train neural networks to play NES game, in a fashion akin to a marionette. The name is also a play on the words "Mario" and "Net", referencing the first supported NES game. Eventually, I hope to train neural networks on the raw visual data, instead of the contents of the NES's RAM.
