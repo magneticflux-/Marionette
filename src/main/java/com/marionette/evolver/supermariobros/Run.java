@@ -124,7 +124,7 @@ public final class Run {
             }
         });
 
-        DefaultVisualization.startInterface(operator, optimizationFunctions, nsga_ii, properties);
+        DefaultVisualization.startInterface(operator, optimizationFunctions, nsga_ii);
 
         //noinspection MagicNumber
         for (int i = 0; i < 1000000; i++) {

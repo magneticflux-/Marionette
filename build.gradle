@@ -11,7 +11,10 @@
 apply plugin: 'java'
 apply plugin: 'maven'
 
-group = 'com.github.magneticflux-'
+group 'com.github.magneticflux-'
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
 
 // In this section you declare where to find the dependencies of your project
 repositories {
@@ -37,9 +40,12 @@ dependencies {
     compile 'org.uncommons.watchmaker:watchmaker-swing:0.7.1'
     compile 'org.encog:encog-core:3.3.0'
     compile 'org.apache.lucene:lucene-core:5.5.0'
+    compile project(':JNSGA-II')
+    compile project(':Java-NEAT')
+    //compile project(':halfnes-headless')
     //compile 'com.github.magneticflux-:JNSGA-II:master-SNAPSHOT'
     //compile 'com.github.magneticflux-:Java-NEAT:master-SNAPSHOT'
-    //compile 'com.github.andrew-hoffman:halfnes:master-SNAPSHOT'
+    compile 'com.github.magneticflux-:halfnes-headless:master-SNAPSHOT'
 
     // Declare the dependency for your favourite test framework you want to use in your tests.
     // TestNG is also supported by the Gradle Test task. Just change the
