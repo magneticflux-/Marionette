@@ -46,7 +46,7 @@ public final class GenerationVisualizer {
         ThreadLocal<Kryo> kryo = ThreadLocal.withInitial(Kryo::new);
         AtomicInteger inc = new AtomicInteger(1);
 
-        Stream<PopulationData<NEATGenome>> populationDataStream = IntStream.rangeClosed(1, 2887).parallel().mapToObj(i -> {
+        Stream<PopulationData<NEATGenome>> populationDataStream = IntStream.rangeClosed(1, 2887).sequential().mapToObj(i -> {
             Input in = null;
             try {
                 in = new Input(new FileInputStream("generations/" + i + ".bin"));
@@ -56,7 +56,7 @@ public final class GenerationVisualizer {
             @SuppressWarnings("unchecked")
             PopulationData<NEATGenome> populationData = (PopulationData<NEATGenome>) kryo.get().readClassAndObject(in);
             in.close();
-            //System.out.println(inc.getAndAdd(1));
+            //System.out.println(inc.getAndAdd(1) + " : " + System.currentTimeMillis());
             return populationData;
         });
 
