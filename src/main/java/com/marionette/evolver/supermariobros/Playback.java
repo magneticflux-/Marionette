@@ -27,8 +27,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.marionette.evolver.supermariobros.Run.pressThreshold;
+import static com.marionette.evolver.supermariobros.Run.visionSize;
+
 public final class Playback {
-    private static final int visionSize = 11;
 
     private Playback() {
     }
@@ -118,48 +120,19 @@ public final class Playback {
 
             final int[][] vision = new int[visionSize][visionSize];
 
-            for (int dx = -vision[0].length / 2; dx < vision[0].length / 2; dx += 1)
-                for (int dy = -vision.length / 2; dy < vision.length / 2; dy += 1) {
-                    int x = marioX + (dx * 16) + 8;
-                    int y = marioY + (dy * 16) - 16;
-                    int page = (int) FastMath.floor(x / 256) % 2;
-                    int subx = (int) FastMath.floor((x % 256) / 16);
-                    int suby = (int) FastMath.floor((y - 32) / 16);
-                    int addr = 0x500 + page * visionSize * 16 + suby * 16 + subx;
-                    if (suby >= visionSize || suby < 0) {
-                        // System.out.println("Outside level.");
-                        vision[dy + (vision.length / 2)][dx + (vision[0].length / 2)] = 0;
-                    } else {
-                        // System.out.println("Block data at " + dx + ", " + dy + ": " + nes.cpuram.read(addr));
-                        vision[dy + (vision.length / 2)][dx + (vision[0].length / 2)] = cpuram.read(addr);
-                    }
-                }
-
-            for (int i = 0; i <= 4; i++) {
-                int enemy = cpuram.read(0xF + i);
-                if (enemy != 0) {
-                    int ex = cpuram.read(0x6E + i) * 0x100 + cpuram.read(0x87 + i);
-                    int ey = cpuram.read(0xCF + i) + 24;
-                    int enemyMarioDeltaX = (ex - marioX) / 16;
-                    int enemyMarioDeltaY = (ey - marioY) / 16;
-                    try {
-                        vision[enemyMarioDeltaY + (vision.length / 2)][enemyMarioDeltaX + (vision[0].length / 2)] = -enemy;
-                    } catch (ArrayIndexOutOfBoundsException ignored) {
-                    }
-                }
-            }
+            Run.computeVision(cpuram, marioX, marioY, vision);
 
             double[] visionUnwound = RunDemo.NESFitness.unwind2DArray(vision);
             double[] reactions = network.stepTime(visionUnwound, 5);
 
-            if (reactions[0] > 0) controller1.pressButton(PuppetController.Button.UP);
-            if (reactions[1] > 0) controller1.pressButton(PuppetController.Button.DOWN);
-            if (reactions[2] > 0) controller1.pressButton(PuppetController.Button.LEFT);
-            if (reactions[3] > 0) controller1.pressButton(PuppetController.Button.RIGHT);
-            if (reactions[4] > 0) controller1.pressButton(PuppetController.Button.A);
-            if (reactions[5] > 0) controller1.pressButton(PuppetController.Button.B);
-            // if (reactions[6] > 0) input.keyPressed(SELECT);
-            // if (reactions[7] > 0) input.keyPressed(START);
+            if (reactions[0] > pressThreshold) controller1.pressButton(PuppetController.Button.UP);
+            if (reactions[1] > pressThreshold) controller1.pressButton(PuppetController.Button.DOWN);
+            if (reactions[2] > pressThreshold) controller1.pressButton(PuppetController.Button.LEFT);
+            if (reactions[3] > pressThreshold) controller1.pressButton(PuppetController.Button.RIGHT);
+            if (reactions[4] > pressThreshold) controller1.pressButton(PuppetController.Button.A);
+            if (reactions[5] > pressThreshold) controller1.pressButton(PuppetController.Button.B);
+            // if (reactions[6] > pressThreshold) input.keyPressed(SELECT);
+            // if (reactions[7] > pressThreshold) input.keyPressed(START);
 
             ui.runFrame();
             image.set(ui.getLastFrame());
@@ -177,7 +150,7 @@ public final class Playback {
     public static void main(String[] args) throws FileNotFoundException, InterruptedException {
         Kryo kryo = new Kryo();
 
-        Input in = new Input(new FileInputStream("generations/2323.bin"));
+        Input in = new Input(new FileInputStream("generations/130.bin"));
         @SuppressWarnings("unchecked")
         PopulationData<NEATGenome> populationData = (PopulationData<NEATGenome>) kryo.readClassAndObject(in);
         in.close();
