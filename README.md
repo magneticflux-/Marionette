@@ -9,3 +9,7 @@ Augmenting Topologies](http://nn.cs.utexas.edu/downloads/papers/stanley.ec02.pdf
 
 Supported Games:
 - Super Mario Bros. (1987)
+
+## Important!
+
+This project must be built with [Java-NEAT](https://github.com/magneticflux-/Java-NEAT), [JNSGA-II](https://github.com/magneticflux-/JNSGA-II), and [halfnes-headless](https://github.com/magneticflux-/halfnes-headless). I organize it by making a Gradle super-project to build all modules together.
