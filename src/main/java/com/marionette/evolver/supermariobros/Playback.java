@@ -150,15 +150,19 @@ public final class Playback {
     public static void main(String[] args) throws FileNotFoundException, InterruptedException {
         Kryo kryo = new Kryo();
 
-        Input in = new Input(new FileInputStream("generations/130.bin"));
+        Input in = new Input(new FileInputStream("generations/269.bin"));
         @SuppressWarnings("unchecked")
         PopulationData<NEATGenome> populationData = (PopulationData<NEATGenome>) kryo.readClassAndObject(in);
         in.close();
 
         List<FrontedIndividual<NEATGenome>> genomes = new ArrayList<>(populationData.getTruncatedPopulation().getPopulation());
-        //final int[] scoreOrder = {0, 3, 2, 1}; // Least to most important
-        //for (int i : scoreOrder)
-        genomes.sort((o1, o2) -> -Double.compare(o1.getScore(1), o2.getScore(1)));
+
+        genomes.sort((o1, o2) -> {
+            assert o1.getIndividual().marioBrosData != null;
+            assert o2.getIndividual().marioBrosData != null;
+            //return -Double.compare(o1.getIndividual().marioBrosData.getLastDistance(), o2.getIndividual().marioBrosData.getLastDistance());
+            return -Double.compare(o1.getScore(1), o2.getScore(1));
+        });
 
         FrontedIndividual<NEATGenome> individual = genomes.get(0);
 

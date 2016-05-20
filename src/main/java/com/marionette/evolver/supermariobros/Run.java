@@ -1,6 +1,7 @@
 package com.marionette.evolver.supermariobros;
 
 import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import com.grapeshot.halfnes.CPURAM;
 import com.grapeshot.halfnes.ui.HeadlessUI;
@@ -27,16 +28,19 @@ import org.jnsgaii.operators.DefaultOperator;
 import org.jnsgaii.operators.Mutator;
 import org.jnsgaii.operators.Recombiner;
 import org.jnsgaii.operators.Selector;
+import org.jnsgaii.population.PopulationData;
 import org.jnsgaii.population.individual.Individual;
 import org.jnsgaii.properties.Key;
 import org.jnsgaii.properties.Properties;
 import org.jnsgaii.visualization.DefaultVisualization;
 
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Created by Mitchell on 3/13/2016.
@@ -45,14 +49,14 @@ public final class Run {
     static final int visionSize = 11;
     static final double pressThreshold = .5;
     private static final ThreadLocal<HeadlessUI> ui = new ThreadLocal<>();
-    private static final int generationToLoad = 0;
+    private static final int generationToLoad = 282;
 
     private Run() {
     }
 
     public static void main(String[] args) throws FileNotFoundException {
         Kryo kryo = new Kryo();
-        //@SuppressWarnings("unchecked") PopulationData<NEATGenome> loadedPopulation = (PopulationData<NEATGenome>) kryo.readClassAndObject(new Input(new FileInputStream("generations/" + generationToLoad + ".bin")));
+        @SuppressWarnings("unchecked") PopulationData<NEATGenome> loadedPopulation = (PopulationData<NEATGenome>) kryo.readClassAndObject(new Input(new FileInputStream("generations/" + generationToLoad + ".bin")));
 
         //noinspection MagicNumber
         Properties properties = new Properties()
@@ -61,7 +65,6 @@ public final class Run {
                         4, 1, 1, // Speciator maxd/disj/exce
                         .2, .5, // Weight mutation
                         .75, .2, // Link addition
-                        //0, 0, // Link removal
                         .3, .2, // Link split
                 })
                 .setValue(Key.DoubleKey.DefaultDoubleKey.ASPECT_MODIFICATION_ARRAY, new double[]{
@@ -74,8 +77,6 @@ public final class Run {
                         .125 / 4, 1, // Weight mutation PROB
                         .125 / 4, 1, // Link addition STR
                         .125 / 4, 1, // Link addition PROB
-                        //.125 / 4, 1, // Link removal STR
-                        //.125 / 4, 1, // Link removal PROB
                         .125 / 4, 1, // Link split STR
                         .125 / 4, 1, // Link split PROB
                 })
@@ -85,18 +86,21 @@ public final class Run {
                 .setInt(NEATIntKey.INITIAL_LINK_COUNT, 1)
                 .setDouble(NEATDoubleKey.NOVELTY_THRESHOLD, 10)
                 .setInt(NEATIntKey.NOVELTY_DISTANCE_COUNT, 10);
-
-        NEATPopulationGenerator neatPopulationGenerator = new NEATPopulationGenerator(); //new NEATPopulationGenerator(loadedPopulation.getTruncatedPopulation().getPopulation().stream().map(individual -> new Individual<>(individual.getIndividual(), individual.aspects)).collect(Collectors.toList()));
+        NEATPopulationGenerator neatPopulationGenerator =
+                //new NEATPopulationGenerator();
+                new NEATPopulationGenerator(loadedPopulation.getTruncatedPopulation().getPopulation().stream().map(individual -> new Individual<>(individual.getIndividual(), individual.aspects)).collect(Collectors.toList()));
 
         NEATSpeciator neatSpeciator = new NEATSpeciator();
-        List<Mutator<NEATGenome>> mutators = Arrays.asList(new NEATWeightMutator(), new NEATLinkAdditionMutator(), /*new NEATLinkRemovalMutator(),*/ new NEATLinkSplitMutator());
+        List<Mutator<NEATGenome>> mutators = Arrays.asList(new NEATWeightMutator(), new NEATLinkAdditionMutator(), new NEATLinkSplitMutator());
         Recombiner<NEATGenome> recombiner = new NEATRecombiner();
         Selector<NEATGenome> selector = new RouletteWheelSquareRootSelection<>();
         DefaultOperator<NEATGenome> operator = new DefaultOperator<>(mutators, recombiner, selector, neatSpeciator);
 
-        SMBNoveltySearch noveltySearch = new SMBNoveltySearch(); //(SMBNoveltySearch) kryo.readClassAndObject(new Input(new FileInputStream("generations/" + generationToLoad + "_novelty.bin")));
+        SMBNoveltySearch noveltySearch =
+                //new SMBNoveltySearch();
+                (SMBNoveltySearch) kryo.readClassAndObject(new Input(new FileInputStream("generations/" + generationToLoad + "_novelty.bin")));
 
-        List<OptimizationFunction<NEATGenome>> optimizationFunctions = Arrays.asList(noveltySearch, new SMBDistanceFunction()/*, new SMBScoreFunction()*/);
+        List<OptimizationFunction<NEATGenome>> optimizationFunctions = Arrays.asList(noveltySearch, new SMBDistanceFunction());
 
         NSGA_II<NEATGenome> nsga_ii = new NSGA_II<>(properties, operator, optimizationFunctions, neatPopulationGenerator, generationToLoad);
 
