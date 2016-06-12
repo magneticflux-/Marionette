@@ -3,14 +3,7 @@ package com.marionette.evolver.supermariobros;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
-import com.grapeshot.halfnes.CPURAM;
-import com.grapeshot.halfnes.ui.HeadlessUI;
-import com.grapeshot.halfnes.ui.PuppetController;
-import com.marionette.evolver.supermariobros.optimizationfunctions.SMBDistanceFunction;
-import com.marionette.evolver.supermariobros.optimizationfunctions.SMBNoveltySearch;
-import org.apache.commons.math3.util.FastMath;
-import org.javaneat.evolution.RunDemo;
-import org.javaneat.evolution.nsgaii.MarioBrosData;
+import com.marionette.evolver.supermariobros.optimizationfunctions.*;
 import org.javaneat.evolution.nsgaii.NEATPopulationGenerator;
 import org.javaneat.evolution.nsgaii.NEATRecombiner;
 import org.javaneat.evolution.nsgaii.NEATSpeciator;
@@ -20,9 +13,10 @@ import org.javaneat.evolution.nsgaii.mutators.NEATLinkAdditionMutator;
 import org.javaneat.evolution.nsgaii.mutators.NEATLinkSplitMutator;
 import org.javaneat.evolution.nsgaii.mutators.NEATWeightMutator;
 import org.javaneat.genome.NEATGenome;
-import org.javaneat.phenome.NEATPhenome;
-import org.jnsgaii.OptimizationFunction;
+import org.jnsgaii.cluster.JPPFJobComputation;
+import org.jnsgaii.computations.Computation;
 import org.jnsgaii.examples.defaultoperatorframework.RouletteWheelSquareRootSelection;
+import org.jnsgaii.functions.OptimizationFunction;
 import org.jnsgaii.multiobjective.NSGA_II;
 import org.jnsgaii.operators.DefaultOperator;
 import org.jnsgaii.operators.Mutator;
@@ -33,12 +27,12 @@ import org.jnsgaii.population.individual.Individual;
 import org.jnsgaii.properties.Key;
 import org.jnsgaii.properties.Properties;
 import org.jnsgaii.visualization.DefaultVisualization;
+import org.jppf.client.JPPFClient;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -46,17 +40,17 @@ import java.util.stream.Collectors;
  * Created by Mitchell on 3/13/2016.
  */
 public final class Run {
-    static final int visionSize = 11;
-    static final double pressThreshold = .5;
-    private static final ThreadLocal<HeadlessUI> ui = new ThreadLocal<>();
-    private static final int generationToLoad = 282;
+    private static final int GENERATION_TO_LOAD = -1;
+    private static final boolean LOAD_FROM_DISK = false;
 
     private Run() {
     }
 
     public static void main(String[] args) throws FileNotFoundException {
+        JPPFClient client = new JPPFClient("Marionette");
         Kryo kryo = new Kryo();
-        @SuppressWarnings("unchecked") PopulationData<NEATGenome> loadedPopulation = (PopulationData<NEATGenome>) kryo.readClassAndObject(new Input(new FileInputStream("generations/" + generationToLoad + ".bin")));
+        @SuppressWarnings({"unchecked", "ConstantConditions"})
+        PopulationData<NEATGenome> loadedPopulation = LOAD_FROM_DISK ? (PopulationData<NEATGenome>) kryo.readClassAndObject(new Input(new FileInputStream("generations/" + GENERATION_TO_LOAD + ".bin"))) : null;
 
         //noinspection MagicNumber
         Properties properties = new Properties()
@@ -80,36 +74,45 @@ public final class Run {
                         .125 / 4, 1, // Link split STR
                         .125 / 4, 1, // Link split PROB
                 })
-                .setInt(Key.IntKey.DefaultIntKey.POPULATION_SIZE, 500)
-                .setInt(NEATIntKey.INPUT_COUNT, visionSize * visionSize)
+                .setInt(Key.IntKey.DefaultIntKey.POPULATION_SIZE, 100)
+                .setInt(NEATIntKey.INPUT_COUNT, SMBComputation.VISION_SIZE * SMBComputation.VISION_SIZE)
                 .setInt(NEATIntKey.OUTPUT_COUNT, 6)
                 .setInt(NEATIntKey.INITIAL_LINK_COUNT, 1)
                 .setDouble(NEATDoubleKey.NOVELTY_THRESHOLD, 10)
                 .setInt(NEATIntKey.NOVELTY_DISTANCE_COUNT, 10);
-        NEATPopulationGenerator neatPopulationGenerator =
-                //new NEATPopulationGenerator();
-                new NEATPopulationGenerator(loadedPopulation.getTruncatedPopulation().getPopulation().stream().map(individual -> new Individual<>(individual.getIndividual(), individual.aspects)).collect(Collectors.toList()));
+        @SuppressWarnings("ConstantConditions")
+        NEATPopulationGenerator neatPopulationGenerator = LOAD_FROM_DISK ? new NEATPopulationGenerator(loadedPopulation.getTruncatedPopulation().getPopulation().stream().map(individual -> new Individual<>(individual.getIndividual(), individual.aspects)).collect(Collectors.toList())) : new NEATPopulationGenerator();
 
-        NEATSpeciator neatSpeciator = new NEATSpeciator();
+        NEATSpeciator speciator = new NEATSpeciator();
         List<Mutator<NEATGenome>> mutators = Arrays.asList(new NEATWeightMutator(), new NEATLinkAdditionMutator(), new NEATLinkSplitMutator());
         Recombiner<NEATGenome> recombiner = new NEATRecombiner();
         Selector<NEATGenome> selector = new RouletteWheelSquareRootSelection<>();
-        DefaultOperator<NEATGenome> operator = new DefaultOperator<>(mutators, recombiner, selector, neatSpeciator);
+        DefaultOperator<NEATGenome> operator = new DefaultOperator<>(mutators, recombiner, selector, speciator);
 
-        SMBNoveltySearch noveltySearch =
-                //new SMBNoveltySearch();
-                (SMBNoveltySearch) kryo.readClassAndObject(new Input(new FileInputStream("generations/" + generationToLoad + "_novelty.bin")));
+        @SuppressWarnings("ConstantConditions")
+        SMBNoveltySearch noveltySearch = LOAD_FROM_DISK ? (SMBNoveltySearch) kryo.readClassAndObject(new Input(new FileInputStream("generations/" + GENERATION_TO_LOAD + "_novelty.bin"))) : new SMBNoveltySearch();
+        SMBDistanceFunction distanceFunction = new SMBDistanceFunction();
+        NEATConnectionCostFunction connectionCostOptimizationFunction = new NEATConnectionCostFunction();
 
-        List<OptimizationFunction<NEATGenome>> optimizationFunctions = Arrays.asList(noveltySearch, new SMBDistanceFunction());
+        SMBComputation smbComputation = new SMBComputation();
+        NEATConnectionCostComputation neatConnectionCostComputation = new NEATConnectionCostComputation();
+        JPPFJobComputation<NEATGenome, MarioBrosData> jppfSMBComputation = JPPFJobComputation.wrapOptimizationFunction(smbComputation, client);
+        JPPFJobComputation<NEATGenome, Double> jppfNEATConnectionCostComputation = JPPFJobComputation.wrapOptimizationFunction(neatConnectionCostComputation, client);
 
-        NSGA_II<NEATGenome> nsga_ii = new NSGA_II<>(properties, operator, optimizationFunctions, neatPopulationGenerator, generationToLoad);
+        List<OptimizationFunction<NEATGenome>> optimizationFunctions = Arrays.asList(
+                distanceFunction,
+                noveltySearch,
+                connectionCostOptimizationFunction
+        );
+
+        List<Computation<NEATGenome, ?>> computations = Arrays.asList(
+                jppfSMBComputation,
+                jppfNEATConnectionCostComputation
+        );
+
+        NSGA_II<NEATGenome> nsga_ii = new NSGA_II<>(properties, operator, optimizationFunctions, neatPopulationGenerator, GENERATION_TO_LOAD, computations);
 
         nsga_ii.addObserver(populationData -> {
-            System.out.println("Max distance = " + populationData.getTruncatedPopulation().getPopulation().parallelStream().mapToDouble(value -> {
-                assert value.getIndividual().marioBrosData != null;
-                return value.getIndividual().marioBrosData.dataPoints.parallelStream().mapToDouble(value1 -> value1.marioX).max().orElse(Double.NaN);
-            }).max().orElse(Double.NaN));
-
             try {
                 Output out1 = new Output(new FileOutputStream("generations/" + populationData.getCurrentGeneration() + ".bin"));
                 Output out2 = new Output(new FileOutputStream("generations/" + populationData.getCurrentGeneration() + "_novelty.bin"));
@@ -123,141 +126,11 @@ public final class Run {
             }
         });
 
-        DefaultVisualization.startInterface(operator, optimizationFunctions, nsga_ii);
+        DefaultVisualization.startInterface(operator, optimizationFunctions, computations, nsga_ii);
 
         //noinspection MagicNumber
         for (int i = 0; i < 1000000; i++) {
             nsga_ii.runGeneration();
-        }
-    }
-
-    public static void verifyScores(Collection<Individual<NEATGenome>> individuals) {
-        individuals.parallelStream().filter(neatGenomeIndividual -> neatGenomeIndividual.getIndividual().marioBrosData == null).forEach(neatGenomeIndividual -> computeFitness(neatGenomeIndividual.getIndividual()));
-    }
-
-    @SuppressWarnings("MagicNumber")
-    private static void computeFitness(NEATGenome candidate) {
-
-        final NEATPhenome network = new NEATPhenome(candidate);
-        if (ui.get() == null) {
-            ui.set(new HeadlessUI("roms/Super Mario Bros..nes", false));
-        }
-        final HeadlessUI ui = Run.ui.get();
-        ui.getNes().reset();
-
-        CPURAM cpuram;
-        PuppetController controller1 = ui.getController1();
-
-        boolean goesRight = candidate.getConnectionGeneList().stream().anyMatch(connectionGene -> connectionGene.getToNode() == candidate.getManager().getOutputOffset() + 3);
-
-        for (int i = 0; i < 31; i++)
-            // Exact frame number until it can begin.
-            ui.runFrame();
-
-        controller1.pressButton(PuppetController.Button.START);
-        ui.runFrame();
-        controller1.releaseButton(PuppetController.Button.START);
-
-        for (int i = 0; i < 162; i++)
-            // Exact frame number until Mario gains control
-            ui.runFrame();
-
-        int maxDistance = 0;
-        int timeout = 0;
-        int currentFrame = 0;
-
-        MarioBrosData data = new MarioBrosData();
-
-        while (true) {
-            controller1.resetButtons();
-
-            cpuram = ui.getNESCPURAM();
-
-            int score = 0;
-            int time = 0;
-            byte world = (byte) cpuram.read(0x075F);
-            byte level = (byte) cpuram.read(0x0760);
-            byte lives = (byte) (cpuram.read(0x075A) + 1);
-            int marioX = cpuram.read(0x6D) * 0x100 + cpuram.read(0x86);
-            int marioY = cpuram.read(0x03B8) + 16;
-            int marioState = cpuram.read(0x000E);
-            for (int i = 0x07DD; i <= 0x07E2; i++)
-                score += cpuram._read(i) * FastMath.pow(10, (0x07E2 - i + 1));
-            for (int i = 0x07F8; i <= 0x07FA; i++)
-                time += cpuram._read(i) * FastMath.pow(10, (0x07FA - i));
-
-            if (currentFrame % 30 == 0) {
-                data.addDataPoint(new MarioBrosData.DataPoint(score, time, world, level, lives, marioX, marioY, marioState));
-            }
-
-            currentFrame++;
-            if (marioState == 8)
-                timeout++;
-            if (marioX > maxDistance) {
-                maxDistance = marioX;
-                timeout = 0;
-            }
-            if (lives < 3 || timeout > 240 || marioState == 0x0B || !goesRight) {
-                //System.out.println(lives + " " + timeout + " " + marioState + " " + goesRight + " " + marioX);
-                break;
-            }
-
-            final int[][] vision = new int[visionSize][visionSize];
-
-            computeVision(cpuram, marioX, marioY, vision);
-
-            double[] visionUnwound = RunDemo.NESFitness.unwind2DArray(vision);
-            double[] reactions = network.stepTime(visionUnwound, 5);
-
-            if (reactions[0] > pressThreshold) controller1.pressButton(PuppetController.Button.UP);
-            if (reactions[1] > pressThreshold) controller1.pressButton(PuppetController.Button.DOWN);
-            if (reactions[2] > pressThreshold) controller1.pressButton(PuppetController.Button.LEFT);
-            if (reactions[3] > pressThreshold) controller1.pressButton(PuppetController.Button.RIGHT);
-            if (reactions[4] > pressThreshold) controller1.pressButton(PuppetController.Button.A);
-            if (reactions[5] > pressThreshold) controller1.pressButton(PuppetController.Button.B);
-            // if (reactions[6] > pressThreshold) input.keyPressed(SELECT);
-            // if (reactions[7] > pressThreshold) input.keyPressed(START);
-
-            ui.runFrame();
-        }
-
-        if (data.dataPoints.size() < 2)
-            data.dataPoints.add(new MarioBrosData.DataPoint(data.dataPoints.get(0)));
-
-        candidate.marioBrosData = data;
-    }
-
-
-    static void computeVision(CPURAM cpuram, int marioX, int marioY, int[][] vision) {
-        for (int dx = -vision[0].length / 2; dx < vision[0].length / 2; dx += 1)
-            for (int dy = -vision.length / 2; dy < vision.length / 2; dy += 1) {
-                int x = marioX + (dx * 16) + 8;
-                int y = marioY + (dy * 16) - 16;
-                int page = (int) FastMath.floor(x / 256) % 2;
-                int subx = (int) FastMath.floor((x % 256) / 16);
-                int suby = (int) FastMath.floor((y - 32) / 16);
-                int addr = 0x500 + page * visionSize * 16 + suby * 16 + subx;
-                if (suby >= visionSize || suby < 0) {
-                    // System.out.println("Outside level.");
-                    vision[dy + (vision.length / 2)][dx + (vision[0].length / 2)] = 0;
-                } else {
-                    // System.out.println("Block data at " + dx + ", " + dy + ": " + nes.cpuram.read(addr));
-                    vision[dy + (vision.length / 2)][dx + (vision[0].length / 2)] = cpuram.read(addr);
-                }
-            }
-
-        for (int i = 0; i <= 4; i++) {
-            int enemy = cpuram.read(0xF + i);
-            if (enemy != 0) {
-                int ex = cpuram.read(0x6E + i) * 0x100 + cpuram.read(0x87 + i);
-                int ey = cpuram.read(0xCF + i) + 24;
-                int enemyMarioDeltaX = (ex - marioX) / 16;
-                int enemyMarioDeltaY = (ey - marioY) / 16;
-                try {
-                    vision[enemyMarioDeltaY + (vision.length / 2)][enemyMarioDeltaX + (vision[0].length / 2)] = -enemy;
-                } catch (ArrayIndexOutOfBoundsException ignored) {
-                }
-            }
         }
     }
 }

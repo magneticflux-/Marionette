@@ -1,12 +1,12 @@
 package com.marionette.evolver.supermariobros.optimizationfunctions;
 
-import com.marionette.evolver.supermariobros.Run;
 import org.javaneat.genome.NEATGenome;
-import org.jnsgaii.DefaultOptimizationFunction;
+import org.jnsgaii.functions.DefaultOptimizationFunction;
 import org.jnsgaii.population.individual.Individual;
 import org.jnsgaii.properties.Key;
 import org.jnsgaii.properties.Properties;
 
+import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -15,9 +15,8 @@ import java.util.List;
 public class SMBScoreFunction extends DefaultOptimizationFunction<NEATGenome> {
 
     @Override
-    public double[] evaluate(List<Individual<NEATGenome>> individuals, Properties properties) {
-        Run.verifyScores(individuals);
-        return super.evaluate(individuals, properties);
+    public double[] evaluate(List<Individual<NEATGenome>> individuals, HashMap<String, Object>[] computationResults, Properties properties) {
+        return super.evaluate(individuals, computationResults, properties);
     }
 
     @Override
@@ -36,8 +35,9 @@ public class SMBScoreFunction extends DefaultOptimizationFunction<NEATGenome> {
     }
 
     @Override
-    public double evaluateIndividual(NEATGenome object, Properties properties) {
-        return object.marioBrosData.dataPoints.parallelStream().mapToInt(value -> value.score).max().orElseGet(() -> -1);
+    public double evaluateIndividual(NEATGenome object, HashMap<String, Object> computationResults, Properties properties) {
+        MarioBrosData data = (MarioBrosData) computationResults.get(SMBComputation.ID);
+        return data.dataPoints.parallelStream().mapToInt(value -> value.score).max().orElseGet(() -> -1);
     }
 
     @Override

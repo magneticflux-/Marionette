@@ -3,11 +3,13 @@ package com.marionette.evolver.supermariobros;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.grapeshot.halfnes.CPURAM;
+import com.grapeshot.halfnes.PrefsSingleton;
 import com.grapeshot.halfnes.ui.HeadlessUI;
 import com.grapeshot.halfnes.ui.PuppetController;
+import com.marionette.evolver.supermariobros.optimizationfunctions.MarioBrosData;
+import com.marionette.evolver.supermariobros.optimizationfunctions.SMBComputation;
 import org.apache.commons.math3.util.FastMath;
 import org.javaneat.evolution.RunDemo;
-import org.javaneat.evolution.nsgaii.MarioBrosData;
 import org.javaneat.genome.NEATGenome;
 import org.javaneat.phenome.NEATPhenome;
 import org.jnsgaii.multiobjective.population.FrontedIndividual;
@@ -27,8 +29,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.marionette.evolver.supermariobros.Run.pressThreshold;
-import static com.marionette.evolver.supermariobros.Run.visionSize;
+import static com.marionette.evolver.supermariobros.optimizationfunctions.SMBComputation.PRESS_THRESHOLD;
+import static com.marionette.evolver.supermariobros.optimizationfunctions.SMBComputation.VISION_SIZE;
 
 public final class Playback {
 
@@ -58,7 +60,8 @@ public final class Playback {
         frame.setVisible(true);
 
         final NEATPhenome network = new NEATPhenome(genome);
-        HeadlessUI ui = new HeadlessUI("roms/Super Mario Bros..nes", true);
+        PrefsSingleton.get().putBoolean("soundEnable", true);
+        final HeadlessUI ui = new HeadlessUI(Playback.class.getClassLoader().getResource("roms/Super Mario Bros..nes"), true);
         ui.getNes().reset();
 
         CPURAM cpuram;
@@ -118,21 +121,21 @@ public final class Playback {
                 break;
             }
 
-            final int[][] vision = new int[visionSize][visionSize];
+            final int[][] vision = new int[VISION_SIZE][VISION_SIZE];
 
-            Run.computeVision(cpuram, marioX, marioY, vision);
+            SMBComputation.computeVision(cpuram, marioX, marioY, vision);
 
             double[] visionUnwound = RunDemo.NESFitness.unwind2DArray(vision);
             double[] reactions = network.stepTime(visionUnwound, 5);
 
-            if (reactions[0] > pressThreshold) controller1.pressButton(PuppetController.Button.UP);
-            if (reactions[1] > pressThreshold) controller1.pressButton(PuppetController.Button.DOWN);
-            if (reactions[2] > pressThreshold) controller1.pressButton(PuppetController.Button.LEFT);
-            if (reactions[3] > pressThreshold) controller1.pressButton(PuppetController.Button.RIGHT);
-            if (reactions[4] > pressThreshold) controller1.pressButton(PuppetController.Button.A);
-            if (reactions[5] > pressThreshold) controller1.pressButton(PuppetController.Button.B);
-            // if (reactions[6] > pressThreshold) input.keyPressed(SELECT);
-            // if (reactions[7] > pressThreshold) input.keyPressed(START);
+            if (reactions[0] > PRESS_THRESHOLD) controller1.pressButton(PuppetController.Button.UP);
+            if (reactions[1] > PRESS_THRESHOLD) controller1.pressButton(PuppetController.Button.DOWN);
+            if (reactions[2] > PRESS_THRESHOLD) controller1.pressButton(PuppetController.Button.LEFT);
+            if (reactions[3] > PRESS_THRESHOLD) controller1.pressButton(PuppetController.Button.RIGHT);
+            if (reactions[4] > PRESS_THRESHOLD) controller1.pressButton(PuppetController.Button.A);
+            if (reactions[5] > PRESS_THRESHOLD) controller1.pressButton(PuppetController.Button.B);
+            // if (reactions[6] > PRESS_THRESHOLD) input.keyPressed(SELECT);
+            // if (reactions[7] > PRESS_THRESHOLD) input.keyPressed(START);
 
             ui.runFrame();
             image.set(ui.getLastFrame());
@@ -150,7 +153,7 @@ public final class Playback {
     public static void main(String[] args) throws FileNotFoundException, InterruptedException {
         Kryo kryo = new Kryo();
 
-        Input in = new Input(new FileInputStream("generations/269.bin"));
+        Input in = new Input(new FileInputStream("generations/95.bin"));
         @SuppressWarnings("unchecked")
         PopulationData<NEATGenome> populationData = (PopulationData<NEATGenome>) kryo.readClassAndObject(in);
         in.close();
@@ -158,17 +161,13 @@ public final class Playback {
         List<FrontedIndividual<NEATGenome>> genomes = new ArrayList<>(populationData.getTruncatedPopulation().getPopulation());
 
         genomes.sort((o1, o2) -> {
-            assert o1.getIndividual().marioBrosData != null;
-            assert o2.getIndividual().marioBrosData != null;
             //return -Double.compare(o1.getIndividual().marioBrosData.getLastDistance(), o2.getIndividual().marioBrosData.getLastDistance());
-            return -Double.compare(o1.getScore(1), o2.getScore(1));
+            return -Double.compare(o1.getScore(0), o2.getScore(0));
         });
 
         FrontedIndividual<NEATGenome> individual = genomes.get(0);
 
         System.out.println(Arrays.toString(individual.getScores()));
-        individual.getIndividual().marioBrosData.dataPoints.forEach(System.out::println);
-        System.out.println(individual.getIndividual().marioBrosData.dataPoints.get(0).world);
         for (Individual<NEATGenome> i : genomes)
             startPlayback(i.getIndividual());
     }

@@ -1,25 +1,16 @@
 package com.marionette.evolver.supermariobros.optimizationfunctions;
 
-import com.marionette.evolver.supermariobros.Run;
 import org.javaneat.genome.NEATGenome;
-import org.jnsgaii.DefaultOptimizationFunction;
-import org.jnsgaii.population.individual.Individual;
+import org.jnsgaii.functions.DefaultOptimizationFunction;
 import org.jnsgaii.properties.Key;
 import org.jnsgaii.properties.Properties;
 
-import java.util.List;
+import java.util.HashMap;
 
 /**
  * Created by Mitchell on 3/25/2016.
  */
 public class SMBDistanceFunction extends DefaultOptimizationFunction<NEATGenome> {
-
-    @Override
-    public double[] evaluate(List<Individual<NEATGenome>> individuals, Properties properties) {
-        Run.verifyScores(individuals);
-        return super.evaluate(individuals, properties);
-    }
-
     @Override
     public double min(Properties properties) {
         return 0;
@@ -27,7 +18,7 @@ public class SMBDistanceFunction extends DefaultOptimizationFunction<NEATGenome>
 
     @Override
     public double max(Properties properties) {
-        return 100;
+        return 2000;
     }
 
     @Override
@@ -36,8 +27,9 @@ public class SMBDistanceFunction extends DefaultOptimizationFunction<NEATGenome>
     }
 
     @Override
-    public double evaluateIndividual(NEATGenome object, Properties properties) {
-        return object.marioBrosData.dataPoints.parallelStream().mapToInt(value -> value.marioX).max().orElse(0) + object.marioBrosData.dataPoints.parallelStream().mapToInt(value -> value.world).max().orElse(0) * 3000;
+    public double evaluateIndividual(NEATGenome object, HashMap<String, Object> computationResults, Properties properties) {
+        MarioBrosData data = (MarioBrosData) computationResults.get(SMBComputation.ID);
+        return data.getLastDistance() + data.getLastWorld() * 3000;
     }
 
     @Override
