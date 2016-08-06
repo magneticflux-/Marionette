@@ -29,4 +29,9 @@ public class NEATConnectionCostComputation extends DefaultComputation<NEATGenome
     public String getComputationID() {
         return ID;
     }
+
+    @Override
+    public boolean isDeterministic() {
+        return true;
+    }
 }

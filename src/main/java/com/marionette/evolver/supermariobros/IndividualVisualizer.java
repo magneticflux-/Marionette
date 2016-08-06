@@ -23,7 +23,7 @@ public final class IndividualVisualizer {
     public static void main(String[] args) throws FileNotFoundException {
         Kryo kryo = new Kryo();
 
-        Input in = new Input(new FileInputStream("generations/19.bin"));
+        Input in = new Input(new FileInputStream("generations/93_population.bin"));
         @SuppressWarnings("unchecked")
         PopulationData<NEATGenome> populationData = (PopulationData<NEATGenome>) kryo.readClassAndObject(in);
         in.close();

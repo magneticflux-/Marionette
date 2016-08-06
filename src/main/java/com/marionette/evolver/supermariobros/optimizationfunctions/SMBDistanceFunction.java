@@ -18,7 +18,12 @@ public class SMBDistanceFunction extends DefaultOptimizationFunction<NEATGenome>
 
     @Override
     public double max(Properties properties) {
-        return 2000;
+        return 4000;
+    }
+
+    @Override
+    public boolean isDeterministic() {
+        return true;
     }
 
     @Override
@@ -29,7 +34,7 @@ public class SMBDistanceFunction extends DefaultOptimizationFunction<NEATGenome>
     @Override
     public double evaluateIndividual(NEATGenome object, HashMap<String, Object> computationResults, Properties properties) {
         MarioBrosData data = (MarioBrosData) computationResults.get(SMBComputation.ID);
-        return data.getLastDistance() + data.getLastWorld() * 3000;
+        return data.getLastDistance();
     }
 
     @Override

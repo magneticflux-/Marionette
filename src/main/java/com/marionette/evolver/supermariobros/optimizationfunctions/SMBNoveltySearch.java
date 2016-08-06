@@ -1,27 +1,39 @@
 package com.marionette.evolver.supermariobros.optimizationfunctions;
 
-import com.google.common.collect.TreeMultiset;
+import com.google.common.collect.Multiset;
 import org.apache.commons.math3.util.FastMath;
 import org.javaneat.evolution.nsgaii.keys.NEATDoubleKey;
 import org.javaneat.evolution.nsgaii.keys.NEATIntKey;
 import org.javaneat.genome.NEATGenome;
-import org.jnsgaii.functions.DefaultOptimizationFunction;
+import org.jnsgaii.functions.OptimizationFunction;
 import org.jnsgaii.population.individual.Individual;
 import org.jnsgaii.properties.Key;
 import org.jnsgaii.properties.Properties;
+import org.jppf.JPPFException;
+import org.jppf.client.JPPFClient;
+import org.jppf.client.JPPFJob;
+import org.jppf.node.protocol.AbstractTask;
+import org.jppf.node.protocol.Task;
 
 import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 /**
  * Created by Mitchell on 3/25/2016.
  */
-public class SMBNoveltySearch extends DefaultOptimizationFunction<NEATGenome> {
+public class SMBNoveltySearch implements OptimizationFunction<NEATGenome> {
 
-    private final Collection<MarioBrosData> history = new ArrayList<>();
+    public static final String NOVELTY_BEHAVIOR_LIST_KEY = "noveltyBehaviorList";
+    private transient final SMBNoveltyBehaviorList noveltyBehaviorList;
+    private transient final JPPFClient client;
 
-    public SMBNoveltySearch() {
+    public SMBNoveltySearch(SMBNoveltyBehaviorList noveltyBehaviorList, JPPFClient client) {
+        this.noveltyBehaviorList = noveltyBehaviorList;
+        this.client = client;
+    }
+
+    private SMBNoveltySearch() {
+        noveltyBehaviorList = new SMBNoveltyBehaviorList();
+        client = null;
     }
 
     private static double getDistance(MarioBrosData data1, MarioBrosData data2) {
@@ -38,14 +50,10 @@ public class SMBNoveltySearch extends DefaultOptimizationFunction<NEATGenome> {
 
             assert dataPoint1 != null && dataPoint2 != null;
 
-            sum += FastMath.pow(dataPoint1.score - dataPoint2.score, 2);
-            sum += FastMath.pow(dataPoint1.time - dataPoint2.time, 2);
-            sum += FastMath.pow(dataPoint1.world - dataPoint2.world, 2);
-            sum += FastMath.pow(dataPoint1.level - dataPoint2.level, 2);
-            sum += FastMath.pow(dataPoint1.lives - dataPoint2.lives, 2);
-            sum += FastMath.pow(dataPoint1.marioX - dataPoint2.marioX, 2);
-            sum += FastMath.pow(dataPoint1.marioY - dataPoint2.marioY, 2);
-            sum += FastMath.pow(dataPoint1.marioState - dataPoint2.marioState, 2);
+            sum += FastMath.pow(dataPoint1.getScore() - dataPoint2.getScore(), 2);
+            sum += FastMath.pow(dataPoint1.getMarioX() - dataPoint2.getMarioX(), 2);
+            sum += FastMath.pow(dataPoint1.getMarioY() - dataPoint2.getMarioY(), 2);
+            sum += FastMath.pow(dataPoint1.getMarioState() - dataPoint2.getMarioState(), 2);
         }
 
         return FastMath.sqrt(sum);
@@ -53,28 +61,66 @@ public class SMBNoveltySearch extends DefaultOptimizationFunction<NEATGenome> {
 
     @Override
     public double[] evaluate(List<Individual<NEATGenome>> individuals, HashMap<String, Object>[] computationResults, Properties properties) {
+        JPPFJob job = new JPPFJob("Optimization Function \"SMBNoveltySearch\"");
+        job.setDataProvider(new HashMapDataProvider());
+        job.getDataProvider().setParameter(NOVELTY_BEHAVIOR_LIST_KEY, noveltyBehaviorList);
+
+        final int numDistances = properties.getInt(NEATIntKey.NOVELTY_DISTANCE_COUNT);
+        final double noveltyThreshold = properties.getDouble(NEATDoubleKey.NOVELTY_THRESHOLD);
+
+        for (int i = 0; i < individuals.size(); i++) {
+            try {
+                final MarioBrosData computationResult = (MarioBrosData) computationResults[i].get(SMBComputation.ID);
+
+                job.add(new AbstractTask<Double>() {
+                    @Override
+                    public void run() {
+                        try {
+                            SMBNoveltyBehaviorList noveltyBehaviorList = getDataProvider().getParameter(NOVELTY_BEHAVIOR_LIST_KEY);
+
+                            List<Double> distances = new ArrayList<>();
+                            for (Multiset.Entry<MarioBrosData> entry : noveltyBehaviorList.getBehaviorList().entrySet()) {
+                                double distance = getDistance(computationResult, entry.getElement());
+                                for (int j = 0; j < entry.getCount(); j++) {
+                                    distances.add(distance);
+                                }
+                            }
+                            Collections.sort(distances);
+
+                            double average = distances.stream().mapToDouble(d -> d).limit(numDistances).average().orElse(0);
+                            if (average >= noveltyThreshold) {
+                                setResult(average);
+                            } else {
+                                setResult(0d);
+                            }
+                        } catch (Throwable t) {
+                            setThrowable(t);
+                        }
+                    }
+                });
+            } catch (JPPFException e) {
+                throw new Error(e);
+            }
+        }
+        job.setBlocking(true);
+
+        List<Task<?>> results = client.submitJob(job);
         double[] scores = new double[individuals.size()];
 
-        IntStream stream = IntStream.range(0, scores.length);
+        for (int i = 0; i < individuals.size(); i++) {
+            //noinspection ThrowableResultOfMethodCallIgnored
+            if (results.get(i).getThrowable() != null)
+                throw new Error(results.get(i).getThrowable());
+            scores[i] = (Double) results.get(i).getResult();
+            if (scores[i] >= noveltyThreshold || noveltyBehaviorList.getBehaviorList().size() == 0) {
+                noveltyBehaviorList.add((MarioBrosData) computationResults[i].get(SMBComputation.ID), numDistances);
+            }
+        }
 
-        stream.forEach(
-                value -> scores[value] = evaluateIndividual(individuals.get(value).getIndividual(), computationResults[value], properties)
-        );
+        System.out.println("Unique novel behaviors: " + noveltyBehaviorList.getBehaviorList().entrySet().size());
+        System.out.println("Total behaviors: " + noveltyBehaviorList.getBehaviorList().size());
+
         return scores;
-    }
-
-    public double evaluateIndividual(NEATGenome individual, HashMap<String, Object> computationResults, Properties properties) {
-        MarioBrosData data = (MarioBrosData) computationResults.get(SMBComputation.ID);
-        int numDistances = properties.getInt(NEATIntKey.NOVELTY_DISTANCE_COUNT);
-        if (history.size() < 1)
-            history.add(data);
-        TreeMultiset<Double> distances = history.parallelStream().map(value -> getDistance(data, value)).collect(Collectors.toCollection(TreeMultiset::create));
-        double average = distances.stream().limit(numDistances).mapToDouble(value -> value).average().orElseGet(() -> Double.NaN);
-        if (average > properties.getDouble(NEATDoubleKey.NOVELTY_THRESHOLD))
-            history.add(data);
-        if (average < 10)
-            return 0;
-        return average;
     }
 
     @Override
@@ -85,6 +131,11 @@ public class SMBNoveltySearch extends DefaultOptimizationFunction<NEATGenome> {
     @Override
     public double max(Properties properties) {
         return 1000;
+    }
+
+    @Override
+    public boolean isDeterministic() {
+        return false;
     }
 
     @Override

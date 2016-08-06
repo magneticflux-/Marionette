@@ -9,12 +9,10 @@ import com.grapeshot.halfnes.ui.PuppetController;
 import com.marionette.evolver.supermariobros.optimizationfunctions.MarioBrosData;
 import com.marionette.evolver.supermariobros.optimizationfunctions.SMBComputation;
 import org.apache.commons.math3.util.FastMath;
-import org.javaneat.evolution.RunDemo;
 import org.javaneat.genome.NEATGenome;
 import org.javaneat.phenome.NEATPhenome;
 import org.jnsgaii.multiobjective.population.FrontedIndividual;
 import org.jnsgaii.population.PopulationData;
-import org.jnsgaii.population.individual.Individual;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -25,12 +23,10 @@ import java.awt.image.BufferedImage;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.marionette.evolver.supermariobros.optimizationfunctions.SMBComputation.PRESS_THRESHOLD;
-import static com.marionette.evolver.supermariobros.optimizationfunctions.SMBComputation.VISION_SIZE;
+import static com.marionette.evolver.supermariobros.optimizationfunctions.SMBComputation.*;
 
 public final class Playback {
 
@@ -60,14 +56,12 @@ public final class Playback {
         frame.setVisible(true);
 
         final NEATPhenome network = new NEATPhenome(genome);
-        PrefsSingleton.get().putBoolean("soundEnable", true);
+        PrefsSingleton.get().putBoolean("soundEnable", false);
         final HeadlessUI ui = new HeadlessUI(Playback.class.getClassLoader().getResource("roms/Super Mario Bros..nes"), true);
         ui.getNes().reset();
 
         CPURAM cpuram;
         PuppetController controller1 = ui.getController1();
-
-        boolean goesRight = genome.getConnectionGeneList().stream().anyMatch(connectionGene -> connectionGene.getToNode() == genome.getManager().getOutputOffset() + 3);
 
         for (int i = 0; i < 31; i++)
             // Exact frame number until it can begin.
@@ -106,8 +100,10 @@ public final class Playback {
                 time += cpuram._read(i) * FastMath.pow(10, (0x07FA - i));
 
             if (currentFrame % 30 == 0) {
-                data.addDataPoint(new MarioBrosData.DataPoint(score, time, world, level, lives, marioX, marioY, marioState));
+                data.addDataPoint(new MarioBrosData.DataPoint(score, marioX, marioY, marioState));
             }
+
+            System.out.println(marioX + "px " + marioY + "px"); //TODO Fast fail when Mario is below the screen, dying is inevitable
 
             currentFrame++;
             if (marioState == 8)
@@ -116,16 +112,16 @@ public final class Playback {
                 maxDistance = marioX;
                 timeout = 0;
             }
-            if (lives < 3 || timeout > 240 || marioState == 0x0B || !goesRight) {
+            if (lives < 3 || timeout > 240 || marioState == 0x0B || marioY >= 208) {
                 //System.out.println(lives + " " + timeout + " " + marioState + " " + goesRight + " " + marioX);
                 break;
             }
 
-            final int[][] vision = new int[VISION_SIZE][VISION_SIZE];
+            final double[][] vision = new double[VISION_SIZE][VISION_SIZE];
 
             SMBComputation.computeVision(cpuram, marioX, marioY, vision);
 
-            double[] visionUnwound = RunDemo.NESFitness.unwind2DArray(vision);
+            double[] visionUnwound = unwind2DArray(vision);
             double[] reactions = network.stepTime(visionUnwound, 5);
 
             if (reactions[0] > PRESS_THRESHOLD) controller1.pressButton(PuppetController.Button.UP);
@@ -140,10 +136,13 @@ public final class Playback {
             ui.runFrame();
             image.set(ui.getLastFrame());
             frame.repaint();
+            //if (maxDistance > 2400) {
+            //    Thread.sleep(500);
+            //}
 
-            long elapsedTimeMS = System.currentTimeMillis() - startTimeMS;
-            if (16 - elapsedTimeMS > 0)
-                Thread.sleep(16 - elapsedTimeMS);
+            //long elapsedTimeMS = System.currentTimeMillis() - startTimeMS;
+            //if (16 - elapsedTimeMS > 0)
+            //    Thread.sleep(16 - elapsedTimeMS);
         }
         Thread.sleep(2000);
         frame.dispose();
@@ -153,7 +152,7 @@ public final class Playback {
     public static void main(String[] args) throws FileNotFoundException, InterruptedException {
         Kryo kryo = new Kryo();
 
-        Input in = new Input(new FileInputStream("generations/95.bin"));
+        Input in = new Input(new FileInputStream("generations/196_population.pd"));
         @SuppressWarnings("unchecked")
         PopulationData<NEATGenome> populationData = (PopulationData<NEATGenome>) kryo.readClassAndObject(in);
         in.close();
@@ -167,8 +166,6 @@ public final class Playback {
 
         FrontedIndividual<NEATGenome> individual = genomes.get(0);
 
-        System.out.println(Arrays.toString(individual.getScores()));
-        for (Individual<NEATGenome> i : genomes)
-            startPlayback(i.getIndividual());
+        startPlayback(individual.getIndividual());
     }
 }

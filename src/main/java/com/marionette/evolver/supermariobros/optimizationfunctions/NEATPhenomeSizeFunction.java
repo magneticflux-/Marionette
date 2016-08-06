@@ -30,6 +30,11 @@ public class NEATPhenomeSizeFunction extends DefaultOptimizationFunction<NEATGen
     }
 
     @Override
+    public boolean isDeterministic() {
+        return true;
+    }
+
+    @Override
     public int compare(Double o1, Double o2) {
         return -Double.compare(o1, o2); // Smaller is better
     }

@@ -17,11 +17,11 @@ public class VisualizeSpecies {
     public static void main(String[] args) throws FileNotFoundException {
         Kryo kryo = new Kryo();
 
-        Input in = new Input(new FileInputStream("generations/284.bin"));
+        Input in = new Input(new FileInputStream("generations/276_population.pd"));
         @SuppressWarnings("unchecked")
         PopulationData<NEATGenome> populationData = (PopulationData<NEATGenome>) kryo.readClassAndObject(in);
         in.close();
 
-        SpeciesVisualization.startVisualization(populationData.getTruncatedPopulation(), new NEATSpeciator());
+        SpeciesVisualization.startVisualization(populationData.getTruncatedPopulation(), new NEATSpeciator(), 276);
     }
 }

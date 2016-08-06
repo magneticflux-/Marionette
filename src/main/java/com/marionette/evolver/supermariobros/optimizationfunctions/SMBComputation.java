@@ -4,9 +4,7 @@ import com.grapeshot.halfnes.CPURAM;
 import com.grapeshot.halfnes.PrefsSingleton;
 import com.grapeshot.halfnes.ui.HeadlessUI;
 import com.grapeshot.halfnes.ui.PuppetController;
-import com.marionette.evolver.supermariobros.Run;
 import org.apache.commons.math3.util.FastMath;
-import org.javaneat.evolution.RunDemo;
 import org.javaneat.genome.NEATGenome;
 import org.javaneat.phenome.NEATPhenome;
 import org.jnsgaii.computations.DefaultComputation;
@@ -18,14 +16,32 @@ import org.jnsgaii.properties.Properties;
  */
 public class SMBComputation extends DefaultComputation<NEATGenome, MarioBrosData> {
     public static final String ID = "SMBComputation";
-    public static final int VISION_SIZE = 13;
+    public static final int VISION_SIZE = 11;
     public static final double PRESS_THRESHOLD = .5;
+
+    /**
+     * Turns a 2d array into a longer 1d array
+     *
+     * @param arr A square 2d array
+     * @return A 1d array with each 2d row concatenated
+     */
+    public static double[] unwind2DArray(double[][] arr) {
+        double[] out = new double[arr.length * arr[0].length];
+        int currentOutIndex = 0;
+        for (double[] anArr : arr) {
+            System.arraycopy(anArr, 0, out, currentOutIndex, anArr.length);
+            currentOutIndex += anArr.length;
+        }
+        return out;
+    }
 
     private static void simulationLoop(HeadlessUI ui, PuppetController controller1, MarioBrosData data, NEATPhenome network) {
         CPURAM cpuram = ui.getNESCPURAM();
         int maxDistance = 0;
         int timeout = 0;
         int currentFrame = 0;
+        boolean goesRight = network.getConnectionList().stream()
+                .anyMatch(neatConnection -> neatConnection.getToIndex() == 1 + network.getNumInputs() + 3);
         while (true) {
             controller1.resetButtons();
 
@@ -43,7 +59,7 @@ public class SMBComputation extends DefaultComputation<NEATGenome, MarioBrosData
                 time += cpuram._read(i) * FastMath.pow(10, (0x07FA - i));
 
             if (currentFrame % 30 == 0) {
-                data.addDataPoint(new MarioBrosData.DataPoint(score, time, world, level, lives, marioX, marioY, marioState));
+                data.addDataPoint(new MarioBrosData.DataPoint(score, marioX, marioY, marioState));
             }
 
             currentFrame++;
@@ -53,16 +69,16 @@ public class SMBComputation extends DefaultComputation<NEATGenome, MarioBrosData
                 maxDistance = marioX;
                 timeout = 0;
             }
-            if (lives < 3 || timeout > 240 || marioState == 0x0B) {
+            if (lives < 3 || timeout > 240 || marioState == 0x0B || !goesRight || marioY >= 208) {
                 //System.out.println(lives + " " + timeout + " " + marioState + " " + goesRight + " " + marioX);
                 break;
             }
 
-            final int[][] vision = new int[VISION_SIZE][VISION_SIZE];
+            final double[][] vision = new double[VISION_SIZE][VISION_SIZE];
 
             computeVision(cpuram, marioX, marioY, vision);
 
-            double[] visionUnwound = RunDemo.NESFitness.unwind2DArray(vision);
+            double[] visionUnwound = unwind2DArray(vision);
             double[] reactions = network.stepTime(visionUnwound, 5);
 
             if (reactions[0] > PRESS_THRESHOLD) controller1.pressButton(PuppetController.Button.UP);
@@ -77,7 +93,7 @@ public class SMBComputation extends DefaultComputation<NEATGenome, MarioBrosData
 
     }
 
-    public static void computeVision(CPURAM cpuram, int marioX, int marioY, int[][] vision) {
+    public static void computeVision(CPURAM cpuram, int marioX, int marioY, double[][] vision) {
         for (int dx = -vision[0].length / 2; dx < vision[0].length / 2; dx += 1)
             for (int dy = -vision.length / 2; dy < vision.length / 2; dy += 1) {
                 int x = marioX + (dx * 16) + 8;
@@ -114,7 +130,8 @@ public class SMBComputation extends DefaultComputation<NEATGenome, MarioBrosData
         final NEATPhenome network = new NEATPhenome(candidate);
 
         PrefsSingleton.get().putBoolean("soundEnable", false);
-        final HeadlessUI ui = new HeadlessUI(Run.class.getClassLoader().getResource("roms/Super Mario Bros..nes"), false);
+        PrefsSingleton.get().putBoolean("Sleep", false);
+        final HeadlessUI ui = new HeadlessUI(SMBComputation.class.getClassLoader().getResource("roms/Super Mario Bros..nes"), false);
 
         PuppetController controller1 = ui.getController1();
 
@@ -148,5 +165,10 @@ public class SMBComputation extends DefaultComputation<NEATGenome, MarioBrosData
     @Override
     public String getComputationID() {
         return ID;
+    }
+
+    @Override
+    public boolean isDeterministic() {
+        return true;
     }
 }

@@ -39,13 +39,14 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Created by Mitchell on 3/13/2016.
+ * Created by Mitchell on 7/28/2016.
  */
-public final class Run {
-    private static final int GENERATION_TO_LOAD = 164;
-    private static final boolean LOAD_FROM_DISK = true;
+@SuppressWarnings("Duplicates")
+public class InfiniteMarioRun {
+    private static final int GENERATION_TO_LOAD = 0;
+    private static final boolean LOAD_FROM_DISK = false;
 
-    private Run() {
+    private InfiniteMarioRun() {
     }
 
     public static void main(String[] args) throws FileNotFoundException {
@@ -63,25 +64,25 @@ public final class Run {
                         .3, .2, // Link split
                 })
                 .setValue(Key.DoubleKey.DefaultDoubleKey.ASPECT_MODIFICATION_ARRAY, new double[]{
-                        .125 / 4, 1, // Crossover STR
-                        .125 / 4, 1, // Crossover PROB
-                        .125 / 4, 1, // Speciator MAX MATING DISTANCE
-                        .125 / 4, 1, // Speciator DISJOINT COEFFICIENT
-                        .125 / 4, 1, // Speciator EXCESS COEFFICIENT
-                        .125 / 4, 1, // Weight mutation STR
-                        .125 / 4, 1, // Weight mutation PROB
-                        .125 / 4, 1, // Enable gene mutation STR
-                        .125 / 4, 1, // Enable gene mutation PROB
-                        .125 / 4, 1, // Link addition STR
-                        .125 / 4, 1, // Link addition PROB
-                        .125 / 4, 1, // Link split STR
-                        .125 / 4, 1, // Link split PROB
+                        .125 / 8, 1, // Crossover STR
+                        .125 / 8, 1, // Crossover PROB
+                        .125 / 8, 1, // Speciator MAX MATING DISTANCE
+                        .125 / 8, 1, // Speciator DISJOINT COEFFICIENT
+                        .125 / 8, 1, // Speciator EXCESS COEFFICIENT
+                        .125 / 8, 1, // Weight mutation STR
+                        .125 / 8, 1, // Weight mutation PROB
+                        .125 / 8, 1, // Enable gene mutation STR
+                        .125 / 8, 1, // Enable gene mutation PROB
+                        .125 / 8, 1, // Link addition STR
+                        .125 / 8, 1, // Link addition PROB
+                        .125 / 8, 1, // Link split STR
+                        .125 / 8, 1, // Link split PROB
                 })
                 .setInt(Key.IntKey.DefaultIntKey.POPULATION_SIZE, 1000)
-                .setInt(NEATIntKey.INPUT_COUNT, SMBComputation.VISION_SIZE * SMBComputation.VISION_SIZE)
+                .setInt(NEATIntKey.INPUT_COUNT, 11 * 11 + 6 + 4 + 4 + 1)
                 .setInt(NEATIntKey.OUTPUT_COUNT, 6)
                 .setInt(NEATIntKey.INITIAL_LINK_COUNT, 1)
-                .setDouble(NEATDoubleKey.NOVELTY_THRESHOLD, 25)
+                .setDouble(NEATDoubleKey.NOVELTY_THRESHOLD, 10)
                 .setInt(NEATIntKey.NOVELTY_DISTANCE_COUNT, 10);
 
         @SuppressWarnings({"unchecked", "ConstantConditions"})
@@ -104,7 +105,7 @@ public final class Run {
         SMBDistanceFunction distanceFunction = new SMBDistanceFunction();
         //NEATConnectionCostFunction connectionCostOptimizationFunction = new NEATConnectionCostFunction();
 
-        SMBComputation smbComputation = new SMBComputation();
+        SMBComputation smbComputation = new InfiniteMarioComputation();
         //NEATConnectionCostComputation neatConnectionCostComputation = new NEATConnectionCostComputation();
         JPPFJobComputation<NEATGenome, MarioBrosData> jppfSMBComputation = JPPFJobComputation.wrapOptimizationFunction(smbComputation, client);
         //JPPFJobComputation<NEATGenome, Double> jppfNEATConnectionCostComputation = JPPFJobComputation.wrapOptimizationFunction(neatConnectionCostComputation, client);
@@ -143,6 +144,8 @@ public final class Run {
         });
 
         DefaultVisualization.startInterface(operator, optimizationFunctions, computations, nsgaii, client);
+
+        //TODO Have NSGAII interface accept PopulationData instances and pass them through to its listeners, load history unobtrusively
 
         //noinspection MagicNumber
         for (int i = 0; i < 1000000; i++) {

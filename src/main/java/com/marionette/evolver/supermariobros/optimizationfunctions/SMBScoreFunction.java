@@ -30,6 +30,11 @@ public class SMBScoreFunction extends DefaultOptimizationFunction<NEATGenome> {
     }
 
     @Override
+    public boolean isDeterministic() {
+        return true;
+    }
+
+    @Override
     public int compare(Double o1, Double o2) {
         return Double.compare(o1, o2); // Larger is better
     }
@@ -37,7 +42,7 @@ public class SMBScoreFunction extends DefaultOptimizationFunction<NEATGenome> {
     @Override
     public double evaluateIndividual(NEATGenome object, HashMap<String, Object> computationResults, Properties properties) {
         MarioBrosData data = (MarioBrosData) computationResults.get(SMBComputation.ID);
-        return data.dataPoints.parallelStream().mapToInt(value -> value.score).max().orElseGet(() -> -1);
+        return data.dataPoints.parallelStream().mapToInt(MarioBrosData.DataPoint::getScore).max().orElseGet(() -> -1);
     }
 
     @Override
