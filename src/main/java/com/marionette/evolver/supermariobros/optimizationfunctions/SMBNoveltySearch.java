@@ -1,9 +1,9 @@
 package com.marionette.evolver.supermariobros.optimizationfunctions;
 
 import com.google.common.collect.Multiset;
+import com.marionette.evolver.supermariobros.optimizationfunctions.keys.NoveltySearchDoubleKey;
+import com.marionette.evolver.supermariobros.optimizationfunctions.keys.NoveltySearchIntKey;
 import org.apache.commons.math3.util.FastMath;
-import org.javaneat.evolution.nsgaii.keys.NEATDoubleKey;
-import org.javaneat.evolution.nsgaii.keys.NEATIntKey;
 import org.javaneat.genome.NEATGenome;
 import org.jnsgaii.functions.OptimizationFunction;
 import org.jnsgaii.population.individual.Individual;
@@ -65,8 +65,9 @@ public class SMBNoveltySearch implements OptimizationFunction<NEATGenome> {
         job.setDataProvider(new HashMapDataProvider());
         job.getDataProvider().setParameter(NOVELTY_BEHAVIOR_LIST_KEY, noveltyBehaviorList);
 
-        final int numDistances = properties.getInt(NEATIntKey.NOVELTY_DISTANCE_COUNT);
-        final double noveltyThreshold = properties.getDouble(NEATDoubleKey.NOVELTY_THRESHOLD);
+        final int numDistances = properties.getInt(NoveltySearchIntKey.NOVELTY_DISTANCE_COUNT);
+        final int numEntries = properties.getInt(NoveltySearchIntKey.NOVELTY_CACHE_MAX_ENTRIES);
+        final double noveltyThreshold = properties.getDouble(NoveltySearchDoubleKey.NOVELTY_THRESHOLD);
 
         for (int i = 0; i < individuals.size(); i++) {
             try {
@@ -113,7 +114,7 @@ public class SMBNoveltySearch implements OptimizationFunction<NEATGenome> {
                 throw new Error(results.get(i).getThrowable());
             scores[i] = (Double) results.get(i).getResult();
             if (scores[i] >= noveltyThreshold || noveltyBehaviorList.getBehaviorList().size() == 0) {
-                noveltyBehaviorList.add((MarioBrosData) computationResults[i].get(SMBComputation.ID), numDistances);
+                noveltyBehaviorList.add((MarioBrosData) computationResults[i].get(SMBComputation.ID), numDistances, numEntries);
             }
         }
 
@@ -130,7 +131,7 @@ public class SMBNoveltySearch implements OptimizationFunction<NEATGenome> {
 
     @Override
     public double max(Properties properties) {
-        return 1000;
+        return 4000;
     }
 
     @Override
@@ -146,8 +147,9 @@ public class SMBNoveltySearch implements OptimizationFunction<NEATGenome> {
     @Override
     public Key[] requestProperties() {
         return new Key[]{
-                NEATDoubleKey.NOVELTY_THRESHOLD,
-                NEATIntKey.NOVELTY_DISTANCE_COUNT
+                NoveltySearchDoubleKey.NOVELTY_THRESHOLD,
+                NoveltySearchIntKey.NOVELTY_DISTANCE_COUNT,
+                NoveltySearchIntKey.NOVELTY_CACHE_MAX_ENTRIES
         };
     }
 }

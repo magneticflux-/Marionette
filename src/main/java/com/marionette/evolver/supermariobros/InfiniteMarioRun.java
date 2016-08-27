@@ -83,6 +83,7 @@ public class InfiniteMarioRun {
                 .setInt(NEATIntKey.INPUT_COUNT, 11 * 11 + 6 + 4 + 4 + 1)
                 .setInt(NEATIntKey.OUTPUT_COUNT, 6)
                 .setInt(NEATIntKey.INITIAL_LINK_COUNT, 1)
+                .setInt(NoveltySearchIntKey.NOVELTY_CACHE_MAX_ENTRIES, 2000)
                 .setDouble(NoveltySearchDoubleKey.NOVELTY_THRESHOLD, 0)
                 .setInt(NoveltySearchIntKey.NOVELTY_DISTANCE_COUNT, 10);
 

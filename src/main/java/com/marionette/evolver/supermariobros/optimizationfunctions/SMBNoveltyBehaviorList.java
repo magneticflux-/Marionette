@@ -18,12 +18,12 @@ public class SMBNoveltyBehaviorList {
     }
 
 
-    public boolean add(MarioBrosData marioBrosData, int maxCount) {
-        if (behaviorList.count(marioBrosData) < maxCount) {
+    public boolean add(MarioBrosData marioBrosData, int maxDuplicateCount, int maxEntryCount) {
+        if (behaviorList.count(marioBrosData) < maxDuplicateCount) {
             boolean toReturn = behaviorList.add(marioBrosData);
 
             Iterator<MarioBrosData> iterator = behaviorList.iterator();
-            while (behaviorList.entrySet().size() > 2000) {
+            while (behaviorList.entrySet().size() > maxEntryCount) {
                 iterator.next();
                 iterator.remove();
             }
