@@ -29,7 +29,7 @@ public class InfiniteMarioPlayback {
         MarioOptions.reset(true, options);
 
         Kryo kryo = new Kryo();
-        Input in = new Input(new FileInputStream("generations/894_population.pd"));
+        Input in = new Input(new FileInputStream("generations/1115_population.pd"));
         @SuppressWarnings("unchecked")
         PopulationData<NEATGenome> populationData = (PopulationData<NEATGenome>) kryo.readClassAndObject(in);
         in.close();

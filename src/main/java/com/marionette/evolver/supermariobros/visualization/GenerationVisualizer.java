@@ -1,4 +1,4 @@
-package com.marionette.evolver.supermariobros;
+package com.marionette.evolver.supermariobros.visualization;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
