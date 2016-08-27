@@ -205,7 +205,7 @@ public class InfiniteMarioComputation extends SMBComputation {
 
                 graphics.translate(-xCam, -yCam);
                 graphics.drawRect(xPixel, yPixel, sprite.wPic, sprite.hPic);
-                graphics.drawLine(marioXPixel, marioYPixel, xPixel, yPixel);
+                graphics.drawLine(marioXPixel + mario.wPic / 2, marioYPixel + mario.hPic / 2, xPixel + sprite.wPic / 2, yPixel + sprite.hPic / 2);
                 graphics.drawString("Distance: " + distance, (xPixel + marioXPixel) / 2, (yPixel + marioYPixel) / 2);
                 graphics.translate(xCam, yCam);
             }
@@ -218,7 +218,7 @@ public class InfiniteMarioComputation extends SMBComputation {
 
                 graphics.translate(-xCam, -yCam);
                 graphics.drawRect(xPixel, yPixel, sprite.wPic, sprite.hPic);
-                graphics.drawLine(marioXPixel, marioYPixel, xPixel, yPixel);
+                graphics.drawLine(marioXPixel + mario.wPic / 2, marioYPixel + mario.hPic / 2, xPixel + sprite.wPic / 2, yPixel + sprite.hPic / 2);
                 graphics.drawString("Distance: " + distance, (xPixel + marioXPixel) / 2, (yPixel + marioYPixel) / 2);
                 graphics.translate(xCam, yCam);
             }
