@@ -4,11 +4,12 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import com.marionette.evolver.supermariobros.optimizationfunctions.*;
+import com.marionette.evolver.supermariobros.optimizationfunctions.keys.NoveltySearchDoubleKey;
+import com.marionette.evolver.supermariobros.optimizationfunctions.keys.NoveltySearchIntKey;
 import org.javaneat.evolution.NEATInnovationMap;
 import org.javaneat.evolution.nsgaii.NEATPopulationGenerator;
 import org.javaneat.evolution.nsgaii.NEATRecombiner;
 import org.javaneat.evolution.nsgaii.NEATSpeciator;
-import org.javaneat.evolution.nsgaii.keys.NEATDoubleKey;
 import org.javaneat.evolution.nsgaii.keys.NEATIntKey;
 import org.javaneat.evolution.nsgaii.mutators.NEATEnableGeneMutator;
 import org.javaneat.evolution.nsgaii.mutators.NEATLinkAdditionMutator;
@@ -81,8 +82,8 @@ public final class Run {
                 .setInt(NEATIntKey.INPUT_COUNT, SMBComputation.VISION_SIZE * SMBComputation.VISION_SIZE)
                 .setInt(NEATIntKey.OUTPUT_COUNT, 6)
                 .setInt(NEATIntKey.INITIAL_LINK_COUNT, 1)
-                .setDouble(NEATDoubleKey.NOVELTY_THRESHOLD, 25)
-                .setInt(NEATIntKey.NOVELTY_DISTANCE_COUNT, 10);
+                .setDouble(NoveltySearchDoubleKey.NOVELTY_THRESHOLD, 25)
+                .setInt(NoveltySearchIntKey.NOVELTY_DISTANCE_COUNT, 10);
 
         @SuppressWarnings({"unchecked", "ConstantConditions"})
         PopulationData<NEATGenome> loadedPopulation = LOAD_FROM_DISK ? (PopulationData<NEATGenome>) kryo.readClassAndObject(new Input(new FileInputStream("generations/" + GENERATION_TO_LOAD + "_population.pd"))) : null;
@@ -91,7 +92,7 @@ public final class Run {
         @SuppressWarnings("ConstantConditions")
         SMBNoveltyBehaviorList noveltyBehaviorList = LOAD_FROM_DISK ? (SMBNoveltyBehaviorList) kryo.readClassAndObject(new Input(new FileInputStream("generations/" + GENERATION_TO_LOAD + "_novelty.nbl"))) : new SMBNoveltyBehaviorList();
         @SuppressWarnings("ConstantConditions")
-        NEATPopulationGenerator neatPopulationGenerator = LOAD_FROM_DISK ? new NEATPopulationGenerator(neatInnovationMap, loadedPopulation.getTruncatedPopulation().getPopulation().stream().map(individual -> new Individual<>(individual.getIndividual(), individual.aspects)).collect(Collectors.toList())) : new NEATPopulationGenerator(neatInnovationMap);
+        NEATPopulationGenerator neatPopulationGenerator = LOAD_FROM_DISK ? NEATPopulationGenerator.createNEATPopulationGenerator(neatInnovationMap, loadedPopulation.getTruncatedPopulation().getPopulation().stream().map(individual -> new Individual<>(individual.getIndividual(), individual.aspects)).collect(Collectors.toList())) : NEATPopulationGenerator.createNEATPopulationGenerator(neatInnovationMap);
 
         NEATSpeciator speciator = new NEATSpeciator();
         List<Mutator<NEATGenome>> mutators = Arrays.asList(new NEATWeightMutator(), new NEATEnableGeneMutator(), new NEATLinkAdditionMutator(neatInnovationMap), new NEATLinkSplitMutator(neatInnovationMap));

@@ -4,11 +4,12 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import com.marionette.evolver.supermariobros.optimizationfunctions.*;
+import com.marionette.evolver.supermariobros.optimizationfunctions.keys.NoveltySearchDoubleKey;
+import com.marionette.evolver.supermariobros.optimizationfunctions.keys.NoveltySearchIntKey;
 import org.javaneat.evolution.NEATInnovationMap;
 import org.javaneat.evolution.nsgaii.NEATPopulationGenerator;
 import org.javaneat.evolution.nsgaii.NEATRecombiner;
 import org.javaneat.evolution.nsgaii.NEATSpeciator;
-import org.javaneat.evolution.nsgaii.keys.NEATDoubleKey;
 import org.javaneat.evolution.nsgaii.keys.NEATIntKey;
 import org.javaneat.evolution.nsgaii.mutators.NEATEnableGeneMutator;
 import org.javaneat.evolution.nsgaii.mutators.NEATLinkAdditionMutator;
@@ -17,7 +18,7 @@ import org.javaneat.evolution.nsgaii.mutators.NEATWeightMutator;
 import org.javaneat.genome.NEATGenome;
 import org.jnsgaii.cluster.JPPFJobComputation;
 import org.jnsgaii.computations.Computation;
-import org.jnsgaii.examples.defaultoperatorframework.RouletteWheelSquareRootSelection;
+import org.jnsgaii.examples.defaultoperatorframework.RouletteWheelLogarithmicSelection;
 import org.jnsgaii.functions.OptimizationFunction;
 import org.jnsgaii.multiobjective.NSGAII;
 import org.jnsgaii.operators.DefaultOperator;
@@ -64,26 +65,26 @@ public class InfiniteMarioRun {
                         .3, .2, // Link split
                 })
                 .setValue(Key.DoubleKey.DefaultDoubleKey.ASPECT_MODIFICATION_ARRAY, new double[]{
-                        .125 / 8, 1, // Crossover STR
-                        .125 / 8, 1, // Crossover PROB
-                        .125 / 8, 1, // Speciator MAX MATING DISTANCE
-                        .125 / 8, 1, // Speciator DISJOINT COEFFICIENT
-                        .125 / 8, 1, // Speciator EXCESS COEFFICIENT
-                        .125 / 8, 1, // Weight mutation STR
-                        .125 / 8, 1, // Weight mutation PROB
-                        .125 / 8, 1, // Enable gene mutation STR
-                        .125 / 8, 1, // Enable gene mutation PROB
-                        .125 / 8, 1, // Link addition STR
-                        .125 / 8, 1, // Link addition PROB
-                        .125 / 8, 1, // Link split STR
-                        .125 / 8, 1, // Link split PROB
+                        .125 / 4, 1, // Crossover STR
+                        .125 / 4, 1, // Crossover PROB
+                        .125 / 4, 1, // Speciator MAX MATING DISTANCE
+                        .125 / 4, 1, // Speciator DISJOINT COEFFICIENT
+                        .125 / 4, 1, // Speciator EXCESS COEFFICIENT
+                        .125 / 4, 1, // Weight mutation STR
+                        .125 / 4, 1, // Weight mutation PROB
+                        .125 / 4, 1, // Enable gene mutation STR
+                        .125 / 4, 1, // Enable gene mutation PROB
+                        .125 / 4, 1, // Link addition STR
+                        .125 / 4, 1, // Link addition PROB
+                        .125 / 4, 1, // Link split STR
+                        .125 / 4, 1, // Link split PROB
                 })
                 .setInt(Key.IntKey.DefaultIntKey.POPULATION_SIZE, 1000)
                 .setInt(NEATIntKey.INPUT_COUNT, 11 * 11 + 6 + 4 + 4 + 1)
                 .setInt(NEATIntKey.OUTPUT_COUNT, 6)
                 .setInt(NEATIntKey.INITIAL_LINK_COUNT, 1)
-                .setDouble(NEATDoubleKey.NOVELTY_THRESHOLD, 10)
-                .setInt(NEATIntKey.NOVELTY_DISTANCE_COUNT, 10);
+                .setDouble(NoveltySearchDoubleKey.NOVELTY_THRESHOLD, 0)
+                .setInt(NoveltySearchIntKey.NOVELTY_DISTANCE_COUNT, 10);
 
         @SuppressWarnings({"unchecked", "ConstantConditions"})
         PopulationData<NEATGenome> loadedPopulation = LOAD_FROM_DISK ? (PopulationData<NEATGenome>) kryo.readClassAndObject(new Input(new FileInputStream("generations/" + GENERATION_TO_LOAD + "_population.pd"))) : null;
@@ -92,17 +93,18 @@ public class InfiniteMarioRun {
         @SuppressWarnings("ConstantConditions")
         SMBNoveltyBehaviorList noveltyBehaviorList = LOAD_FROM_DISK ? (SMBNoveltyBehaviorList) kryo.readClassAndObject(new Input(new FileInputStream("generations/" + GENERATION_TO_LOAD + "_novelty.nbl"))) : new SMBNoveltyBehaviorList();
         @SuppressWarnings("ConstantConditions")
-        NEATPopulationGenerator neatPopulationGenerator = LOAD_FROM_DISK ? new NEATPopulationGenerator(neatInnovationMap, loadedPopulation.getTruncatedPopulation().getPopulation().stream().map(individual -> new Individual<>(individual.getIndividual(), individual.aspects)).collect(Collectors.toList())) : new NEATPopulationGenerator(neatInnovationMap);
+        NEATPopulationGenerator neatPopulationGenerator = LOAD_FROM_DISK ? NEATPopulationGenerator.createNEATPopulationGenerator(neatInnovationMap, loadedPopulation.getTruncatedPopulation().getPopulation().stream().map(individual -> new Individual<>(individual.getIndividual(), individual.aspects)).collect(Collectors.toList())) : NEATPopulationGenerator.createNEATPopulationGenerator(neatInnovationMap);
 
         NEATSpeciator speciator = new NEATSpeciator();
         List<Mutator<NEATGenome>> mutators = Arrays.asList(new NEATWeightMutator(), new NEATEnableGeneMutator(), new NEATLinkAdditionMutator(neatInnovationMap), new NEATLinkSplitMutator(neatInnovationMap));
         Recombiner<NEATGenome> recombiner = new NEATRecombiner(neatInnovationMap);
-        Selector<NEATGenome> selector = new RouletteWheelSquareRootSelection<>();
+        Selector<NEATGenome> selector = new RouletteWheelLogarithmicSelection<>();//new RouletteWheelSquareRootSelection<>();
         DefaultOperator<NEATGenome> operator = new DefaultOperator<>(mutators, recombiner, selector, speciator);
 
         @SuppressWarnings("ConstantConditions")
         SMBNoveltySearch noveltySearch = new SMBNoveltySearch(noveltyBehaviorList, client);
         SMBDistanceFunction distanceFunction = new SMBDistanceFunction();
+        NEATNetworkModularityFunction modularityFunction = new NEATNetworkModularityFunction(client);
         //NEATConnectionCostFunction connectionCostOptimizationFunction = new NEATConnectionCostFunction();
 
         SMBComputation smbComputation = new InfiniteMarioComputation();
@@ -112,7 +114,8 @@ public class InfiniteMarioRun {
 
         List<OptimizationFunction<NEATGenome>> optimizationFunctions = Arrays.asList(
                 distanceFunction,
-                noveltySearch
+                noveltySearch,
+                modularityFunction
                 //connectionCostOptimizationFunction
         );
 
