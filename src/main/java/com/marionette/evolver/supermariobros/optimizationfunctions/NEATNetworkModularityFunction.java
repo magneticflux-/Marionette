@@ -32,6 +32,10 @@ public class NEATNetworkModularityFunction implements OptimizationFunction<NEATG
         this.client = client;
     }
 
+    private NEATNetworkModularityFunction() {
+        this.client = null;
+    }
+
     @Override
     public double[] evaluate(List<Individual<NEATGenome>> individuals, HashMap<String, Object>[] computationResults, Properties properties) {
         JPPFJob job = new JPPFJob("Optimization Function \"NEATNetworkModularityFunction\"");
