@@ -1,0 +1,3 @@
+include ':Marionette'
+include ':Java-NEAT'
+include ':JNSGA-II'
