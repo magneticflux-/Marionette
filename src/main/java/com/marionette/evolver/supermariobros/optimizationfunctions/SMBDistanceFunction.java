@@ -18,7 +18,7 @@ public class SMBDistanceFunction extends DefaultOptimizationFunction<NEATGenome>
 
     @Override
     public double max(Properties properties) {
-        return 4000;
+        return 2000;
     }
 
     @Override

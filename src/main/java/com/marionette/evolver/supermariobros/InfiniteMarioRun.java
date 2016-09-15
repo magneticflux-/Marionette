@@ -58,7 +58,7 @@ public class InfiniteMarioRun {
         Properties properties = new Properties()
                 .setValue(Key.DoubleKey.DefaultDoubleKey.INITIAL_ASPECT_ARRAY, new double[]{
                         .8, 1, // Crossover STR/PROB
-                        10, 1, 1, // Speciator maxd/disj/exce
+                        5, 1, 1, // Speciator maxd/disj/exce
                         .2, .5, // Weight mutation
                         .2, .25, // Enable gene mutation
                         .75, .2, // Link addition
