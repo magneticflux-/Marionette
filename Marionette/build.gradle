@@ -49,6 +49,7 @@ dependencies {
     //compile 'org.encog:encog-core:3.3.0'
     //compile 'org.apache.lucene:lucene-core:5.5.0'
     compile group: 'org.jppf', name: 'jppf-client', version: '5.2.1'
+    compile group: 'org.jppf', name: 'jppf-server', version: '5.2.1'
     compile project(':JNSGA-II')
     compile project(':Java-NEAT')
     //compile 'net.sourceforge:javaml:0.1.7'
