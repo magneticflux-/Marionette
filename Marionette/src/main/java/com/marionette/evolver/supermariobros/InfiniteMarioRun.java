@@ -79,7 +79,7 @@ public class InfiniteMarioRun {
                         .125 / 4, 1, // Link split STR
                         .125 / 4, 1, // Link split PROB
                 })
-                .setInt(Key.IntKey.DefaultIntKey.POPULATION_SIZE, 4000)
+                .setInt(Key.IntKey.DefaultIntKey.POPULATION_SIZE, 1000)
                 .setInt(NEATIntKey.INPUT_COUNT, 11 * 11 + 6 + 4 + 4 + 1)
                 .setInt(NEATIntKey.OUTPUT_COUNT, 6)
                 .setInt(NEATIntKey.INITIAL_LINK_COUNT, 1)
