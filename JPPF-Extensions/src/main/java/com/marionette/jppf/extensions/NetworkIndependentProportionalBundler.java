@@ -4,6 +4,10 @@ import org.jppf.load.balancer.BundleDataHolder;
 import org.jppf.load.balancer.BundlePerformanceSample;
 import org.jppf.load.balancer.impl.ProportionalBundler;
 import org.jppf.load.balancer.impl.ProportionalProfile;
+import org.jppf.management.JPPFSystemInformation;
+import org.jppf.utils.TypedProperties;
+import org.jppf.utils.configuration.JPPFProperties;
+import org.jppf.utils.configuration.JPPFProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,6 +32,7 @@ public class NetworkIndependentProportionalBundler extends ProportionalBundler {
      */
     public NetworkIndependentProportionalBundler(ProportionalProfile profile) {
         super(profile);
+        bundleSize = -1;
     }
 
     @Override
@@ -35,15 +40,26 @@ public class NetworkIndependentProportionalBundler extends ProportionalBundler {
         /* Copied from AbstractAdaptiveBundler */
         int n1 = size / nbThreads;
         int n2 = size % nbThreads;
-        double mean = accumulatedElapsed / size;
-        double t = 0d;
-        if (n1 == 0) t = mean;
+        double meanTimePerTask = accumulatedElapsed / size;
+        double t;
+        if (n1 == 0) t = meanTimePerTask;
         else {
-            t = n1 * mean;
-            if (n2 > 0) t += mean * ((double) n2 / nbThreads);
+            t = n1 * meanTimePerTask;
+            if (n2 > 0) t += meanTimePerTask * ((double) n2 / nbThreads);
         }
         //t += overheadTime;
         feedback(size, t);
+    }
+
+    @Override
+    public void setChannelConfiguration(final JPPFSystemInformation nodeConfiguration) {
+        super.setChannelConfiguration(nodeConfiguration);
+        TypedProperties jppf = nodeConfiguration.getJppf();
+        boolean isPeer = jppf.getBoolean("jppf.peer.driver", false);
+        JPPFProperty prop = isPeer ? JPPFProperties.PEER_PROCESSING_THREADS : JPPFProperties.PROCESSING_THREADS;
+        nbThreads = jppf.getInt(prop.getName(), 1);
+        if (bundleSize < 0)
+            bundleSize = nbThreads * profile.getInitialSize();
     }
 
     @Override
