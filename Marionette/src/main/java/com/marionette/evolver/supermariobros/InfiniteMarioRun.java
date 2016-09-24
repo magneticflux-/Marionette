@@ -61,8 +61,8 @@ public class InfiniteMarioRun {
                         5, 1, 1, // Speciator maxd/disj/exce
                         .2, .5, // Weight mutation
                         .2, .25, // Enable gene mutation
-                        .75, .2, // Link addition
-                        .3, .2, // Link split
+                        .75, .4, // Link addition
+                        .3, .4, // Link split
                 })
                 .setValue(Key.DoubleKey.DefaultDoubleKey.ASPECT_MODIFICATION_ARRAY, new double[]{
                         .125 / 4, 1, // Crossover STR
@@ -83,7 +83,7 @@ public class InfiniteMarioRun {
                 .setInt(NEATIntKey.INPUT_COUNT, 11 * 11 + 6 + 4 + 4 + 1)
                 .setInt(NEATIntKey.OUTPUT_COUNT, 6)
                 .setInt(NEATIntKey.INITIAL_LINK_COUNT, 1)
-                .setInt(NoveltySearchIntKey.NOVELTY_CACHE_MAX_ENTRIES, 2000)
+                .setInt(NoveltySearchIntKey.NOVELTY_CACHE_MAX_ENTRIES, 10000)
                 .setDouble(NoveltySearchDoubleKey.NOVELTY_THRESHOLD, 0)
                 .setInt(NoveltySearchIntKey.NOVELTY_DISTANCE_COUNT, 10);
 

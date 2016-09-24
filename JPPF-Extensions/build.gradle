@@ -10,4 +10,5 @@ repositories {
 dependencies {
     compile group: 'org.jppf', name: 'jppf-client', version: '5.2.1'
     compile group: 'org.jppf', name: 'jppf-server', version: '5.2.1'
+    compile group: 'org.jppf', name: 'jppf-admin', version: '5.2.1'
 }

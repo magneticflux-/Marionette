@@ -92,7 +92,7 @@ public class NEATNetworkModularityFunction implements OptimizationFunction<NEATG
 
     @Override
     public double max(Properties properties) {
-        return 20;
+        return 100;
     }
 
     @Override
