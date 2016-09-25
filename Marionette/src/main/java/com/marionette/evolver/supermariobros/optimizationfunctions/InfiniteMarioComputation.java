@@ -27,6 +27,7 @@ import org.jnsgaii.properties.Properties;
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.geom.Point2D;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -96,7 +97,7 @@ public class InfiniteMarioComputation extends SMBComputation {
 
     public static final class NEATGenomeAgent extends MarioAIBase implements IMarioDebugDraw {
         private final NEATPhenome phenome;
-        private Entity[] priorEntities = new Entity[2];
+        private Entity[] priorEntities = new Entity[3];
         private float intermediateReward;
 
         public NEATGenomeAgent(NEATPhenome phenome) {
@@ -139,27 +140,18 @@ public class InfiniteMarioComputation extends SMBComputation {
                     .filter(entity -> entity.type != EntityType.NOTHING && entity.type != EntityType.FIREBALL)
                     .collect(Collectors.toList());
             sortedEntities.sort((o1, o2) -> Double.compare(Point2D.distance(0, 0, o1.dX, o1.dY), Point2D.distance(0, 0, o2.dX, o2.dY)));
-            if (sortedEntities.size() > 0) {
-                Entity entity = sortedEntities.get(0);
+
+            Arrays.fill(priorEntities, null);
+
+            for (int i = 0; i < priorEntities.length && i < sortedEntities.size(); i++) {
+                Entity entity = sortedEntities.get(i);
                 inputs[currentIndex++] = FastMath.atan2(entity.dY, entity.dX) / FastMath.PI;
                 inputs[currentIndex++] = FastMath.sqrt(FastMath.pow(entity.dX, 2) + FastMath.pow(entity.dY, 2)) / 100;
                 inputs[currentIndex++] = entity.speed.x / 10;
                 inputs[currentIndex++] = entity.type == EntityType.DANGER ? 1 : 0;
-                priorEntities[0] = entity;
-            } else {
-                priorEntities[0] = null;
-                priorEntities[1] = null;
+                priorEntities[i] = entity;
             }
-            if (sortedEntities.size() > 1) {
-                Entity entity = sortedEntities.get(1);
-                inputs[currentIndex++] = FastMath.atan2(entity.dY, entity.dX) / FastMath.PI;
-                inputs[currentIndex++] = FastMath.sqrt(FastMath.pow(entity.dX, 2) + FastMath.pow(entity.dY, 2)) / 100;
-                inputs[currentIndex++] = entity.speed.x / 10;
-                inputs[currentIndex++] = entity.type == EntityType.DANGER ? 1 : 0;
-                priorEntities[1] = entity;
-            } else {
-                priorEntities[1] = null;
-            }
+
             inputs[currentIndex] = intermediateReward / 1000;
 
             double[] results = this.phenome.stepTime(inputs, 4);
@@ -215,6 +207,19 @@ public class InfiniteMarioComputation extends SMBComputation {
                 int yPixel = (int) sprite.y - sprite.yPicO;
                 float distance = (float) FastMath.sqrt(FastMath.pow(priorEntities[1].dX, 2) + FastMath.pow(priorEntities[1].dY, 2)) / 100;
                 graphics.setColor(Color.ORANGE);
+
+                graphics.translate(-xCam, -yCam);
+                graphics.drawRect(xPixel, yPixel, sprite.wPic, sprite.hPic);
+                graphics.drawLine(marioXPixel + mario.wPic / 2, marioYPixel + mario.hPic / 2, xPixel + sprite.wPic / 2, yPixel + sprite.hPic / 2);
+                graphics.drawString("Distance: " + distance, (xPixel + marioXPixel) / 2, (yPixel + marioYPixel) / 2);
+                graphics.translate(xCam, yCam);
+            }
+            if (priorEntities[2] != null) {
+                Sprite sprite = priorEntities[2].sprite;
+                int xPixel = (int) sprite.x - sprite.xPicO;
+                int yPixel = (int) sprite.y - sprite.yPicO;
+                float distance = (float) FastMath.sqrt(FastMath.pow(priorEntities[2].dX, 2) + FastMath.pow(priorEntities[2].dY, 2)) / 100;
+                graphics.setColor(Color.YELLOW);
 
                 graphics.translate(-xCam, -yCam);
                 graphics.drawRect(xPixel, yPixel, sprite.wPic, sprite.hPic);
