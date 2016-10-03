@@ -29,6 +29,7 @@ import java.awt.Graphics;
 import java.awt.geom.Point2D;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
 /**
@@ -63,8 +64,8 @@ public class InfiniteMarioComputation extends SMBComputation {
     @Override
     public MarioBrosData computeIndividual(Individual<NEATGenome> individual, Properties properties) {
         MarioOptions.javaInit();
-        String options = FastOpts.VIS_OFF + " rfw 21 rfh 21 mm 2" + FastOpts.L_ENEMY(Enemy.GOOMBA, Enemy.GREEN_KOOPA, Enemy.GREEN_KOOPA_WINGED, Enemy.RED_KOOPA)
-                + FastOpts.L_RANDOM_SEED(0) + FastOpts.AI_ZL_1_1 + FastOpts.L_LENGTH(1024 + 512) + FastOpts.L_DEAD_ENDS_OFF + FastOpts.L_HIDDEN_BLOCKS_ON + FastOpts.S_TIME_LIMIT_800;
+        String options = FastOpts.S_MARIO_SMALL + FastOpts.VIS_OFF + " rfw 21 rfh 21 mm 2" + FastOpts.L_ENEMY(Enemy.GOOMBA, Enemy.GREEN_KOOPA, Enemy.GREEN_KOOPA_WINGED, Enemy.RED_KOOPA)
+                + FastOpts.L_RANDOM_SEED(ThreadLocalRandom.current().nextInt()) + FastOpts.AI_ZL_1_1 + FastOpts.L_LENGTH(1024 + 512) + FastOpts.L_DEAD_ENDS_OFF + FastOpts.L_HIDDEN_BLOCKS_ON + FastOpts.S_TIME_LIMIT_800;
         MarioOptions.reset(false, options);
         IEnvironment environment = MarioEnvironment.getInstance();
         NEATGenomeAgent agent = new NEATGenomeAgent(new NEATPhenome(individual.getIndividual()));
@@ -84,7 +85,7 @@ public class InfiniteMarioComputation extends SMBComputation {
             // NOTIFY AGENT ABOUT CURRENT INTERMEDIATE REWARD
             agent.receiveReward(environment.getIntermediateReward());
 
-            if (currentTick++ % 120 == 0) {
+            if (currentTick++ % 60 == 0) {
                 LevelScene levelScene = environment.getLevelScene();
                 data.addDataPoint(new MarioBrosData.DataPoint(Mario.coins, (int) levelScene.mario.x, (int) levelScene.mario.y, extractMarioMode(levelScene.getMarioMode())));
             }
@@ -119,7 +120,7 @@ public class InfiniteMarioComputation extends SMBComputation {
 
         @Override
         public MarioInput actionSelection() {
-            double[] inputs = new double[11 * 11 + 6 + 4 + 4 + 1]; // Grid, 6 Mario data, two enemy angles/distances/speeds/dangerous + reward
+            double[] inputs = new double[11 * 11 + 6 + 4 * 3 + 1]; // Grid, 6 Mario data, three enemy angles/distances/speeds/dangerous + reward
             int currentIndex = 0;
 
             for (int rowRel = -5; rowRel <= 5; rowRel++) { // 11x11
