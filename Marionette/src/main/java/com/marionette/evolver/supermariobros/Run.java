@@ -16,7 +16,7 @@ import org.javaneat.evolution.nsgaii.mutators.NEATLinkAdditionMutator;
 import org.javaneat.evolution.nsgaii.mutators.NEATLinkSplitMutator;
 import org.javaneat.evolution.nsgaii.mutators.NEATWeightMutator;
 import org.javaneat.genome.NEATGenome;
-import org.jnsgaii.cluster.JPPFJobComputation;
+import org.jnsgaii.cluster.computations.JPPFJobComputation;
 import org.jnsgaii.computations.Computation;
 import org.jnsgaii.examples.defaultoperatorframework.RouletteWheelSquareRootSelection;
 import org.jnsgaii.functions.OptimizationFunction;

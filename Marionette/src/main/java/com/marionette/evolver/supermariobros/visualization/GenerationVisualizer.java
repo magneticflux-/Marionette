@@ -2,6 +2,7 @@ package com.marionette.evolver.supermariobros.visualization;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
+import com.marionette.evolver.supermariobros.optimizationfunctions.NEATNetworkModularityFunction;
 import com.marionette.evolver.supermariobros.optimizationfunctions.SMBComputation;
 import com.marionette.evolver.supermariobros.optimizationfunctions.SMBDistanceFunction;
 import com.marionette.evolver.supermariobros.optimizationfunctions.SMBNoveltySearch;
@@ -50,7 +51,7 @@ public final class GenerationVisualizer {
 
         Kryo kryo = new Kryo();
 
-        Stream<PopulationData<NEATGenome>> populationDataStream = IntStream.rangeClosed(1, 478).mapToObj(i -> {
+        Stream<PopulationData<NEATGenome>> populationDataStream = IntStream.rangeClosed(1, 43).mapToObj(i -> {
             try (Input input = new Input(new FileInputStream("generations/" + i + "_population.pd"))) {
                 //noinspection unchecked
                 return (PopulationData<NEATGenome>) kryo.readClassAndObject(input);
@@ -61,7 +62,8 @@ public final class GenerationVisualizer {
 
         DummyNSGAII<NEATGenome> dummyNSGAII = new DummyNSGAII<>(populationDataStream);
 
-        DefaultVisualization.startInterface(operator, Arrays.asList(new SMBDistanceFunction(), new SMBNoveltySearch(null, null)), Arrays.asList(new SMBComputation()), dummyNSGAII, new JPPFClient());
+        DefaultVisualization.startInterface(operator, Arrays.asList(new SMBDistanceFunction(), new SMBNoveltySearch(null, null), new NEATNetworkModularityFunction(null)),
+                Arrays.asList(new SMBComputation()), dummyNSGAII, new JPPFClient());
         while (dummyNSGAII.loadGeneration()) {
             System.out.println("Loaded generation " + dummyNSGAII.getCurrentGeneration());
         }

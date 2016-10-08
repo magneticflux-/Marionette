@@ -25,14 +25,16 @@ import java.util.List;
 public class InfiniteMarioPlayback {
     public static void main(String[] args) throws FileNotFoundException, InterruptedException {
         MarioOptions.javaInit();
-        String options = FastOpts.VIS_ON_2X + " fps 30 rfw 21 rfh 21 mm 2" + FastOpts.L_ENEMY(Enemy.GOOMBA, Enemy.GREEN_KOOPA, Enemy.GREEN_KOOPA_WINGED, Enemy.RED_KOOPA) + FastOpts.L_RANDOM_SEED(0) + FastOpts.AI_ZL_1_1 + FastOpts.L_LENGTH(1024 + 512) + FastOpts.L_DEAD_ENDS_OFF + FastOpts.L_HIDDEN_BLOCKS_ON + FastOpts.S_TIME_LIMIT_800;
+        String options = FastOpts.S_MARIO_SMALL + FastOpts.VIS_ON_2X + " fps 30 rfw 21 rfh 21 mm 2" + FastOpts.L_ENEMY(Enemy.GOOMBA, Enemy.GREEN_KOOPA, Enemy.GREEN_KOOPA_WINGED, Enemy.RED_KOOPA) + FastOpts.L_RANDOM_SEED(1) + FastOpts.AI_ZL_1_1 + FastOpts.L_LENGTH(1024 + 1024) + FastOpts.L_DEAD_ENDS_OFF + FastOpts.L_HIDDEN_BLOCKS_ON + FastOpts.S_TIME_LIMIT_800;
         MarioOptions.reset(true, options);
 
         Kryo kryo = new Kryo();
-        Input in = new Input(new FileInputStream("generations/1115_population.pd"));
+
+        Input in = new Input(new FileInputStream("generations/644_population.pd"));
         @SuppressWarnings("unchecked")
         PopulationData<NEATGenome> populationData = (PopulationData<NEATGenome>) kryo.readClassAndObject(in);
         in.close();
+
         List<FrontedIndividual<NEATGenome>> genomes = new ArrayList<>(populationData.getTruncatedPopulation().getPopulation());
         genomes.sort((o1, o2) -> -Double.compare(o1.getScore(0), o2.getScore(0)));
         FrontedIndividual<NEATGenome> individual = genomes.get(0);
