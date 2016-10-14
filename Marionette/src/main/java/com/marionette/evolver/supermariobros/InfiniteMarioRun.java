@@ -5,9 +5,16 @@ import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import com.esotericsoftware.kryo.pool.KryoCallback;
 import com.esotericsoftware.kryo.pool.KryoPool;
-import com.marionette.evolver.supermariobros.optimizationfunctions.*;
+import com.marionette.evolver.supermariobros.optimizationfunctions.InfiniteMarioComputation;
+import com.marionette.evolver.supermariobros.optimizationfunctions.MarioBrosData;
+import com.marionette.evolver.supermariobros.optimizationfunctions.NEATNetworkModularityFunction;
+import com.marionette.evolver.supermariobros.optimizationfunctions.SMBComputation;
+import com.marionette.evolver.supermariobros.optimizationfunctions.SMBDistanceFunction;
+import com.marionette.evolver.supermariobros.optimizationfunctions.SMBNoveltyBehaviorList;
+import com.marionette.evolver.supermariobros.optimizationfunctions.SMBNoveltySearch;
 import com.marionette.evolver.supermariobros.optimizationfunctions.keys.NoveltySearchDoubleKey;
 import com.marionette.evolver.supermariobros.optimizationfunctions.keys.NoveltySearchIntKey;
+
 import org.javaneat.evolution.NEATInnovationMap;
 import org.javaneat.evolution.nsgaii.NEATPopulationGenerator;
 import org.javaneat.evolution.nsgaii.NEATRecombiner;
@@ -36,7 +43,6 @@ import org.jnsgaii.properties.Properties;
 import org.jnsgaii.visualization.TabbedVisualizationWindow;
 import org.jppf.client.JPPFClient;
 
-import javax.swing.WindowConstants;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -47,6 +53,8 @@ import java.util.concurrent.Executors;
 import java.util.function.Predicate;
 import java.util.function.ToDoubleFunction;
 import java.util.stream.Collectors;
+
+import javax.swing.WindowConstants;
 
 /**
  * Created by Mitchell on 7/28/2016.
@@ -94,7 +102,8 @@ public class InfiniteMarioRun {
                 .setInt(NEATIntKey.INITIAL_LINK_COUNT, 10)
                 .setInt(NoveltySearchIntKey.NOVELTY_CACHE_MAX_ENTRIES, 2000)
                 .setDouble(NoveltySearchDoubleKey.NOVELTY_THRESHOLD, 0)
-                .setInt(NoveltySearchIntKey.NOVELTY_DISTANCE_COUNT, 25);
+                .setInt(NoveltySearchIntKey.NOVELTY_DISTANCE_COUNT, 25)
+                .setInt(NEATIntKey.TARGET_SPECIES, 25);
 
         @SuppressWarnings("ConstantConditions")
         PopulationData<NEATGenome> loadedPopulation = LOAD_FROM_DISK ? kryoPool.run(kryo -> {
@@ -159,7 +168,7 @@ public class InfiniteMarioRun {
 
         NSGAII<NEATGenome> nsgaii = new NSGAII<>(properties, defaultOperator, optimizationFunctions, neatPopulationGenerator, GENERATION_TO_LOAD, computations);
 
-        //noinspection CodeBlock2Expr
+        nsgaii.addObserver(speciator);
         nsgaii.addObserver(populationData -> {
             ExecutorService executorService = Executors.newCachedThreadPool();
             executorService.submit(() -> {
@@ -247,7 +256,9 @@ public class InfiniteMarioRun {
                                         (ToDoubleFunction<FrontedIndividual<NEATGenome>>) value -> value.getIndividual().getConnectionGeneList().stream()
                                                 .filter(ConnectionGene::getEnabled).count()).toArray();
                             }
-                        }
+                        },
+                        speciator.getNumSpeciesStatisticFunction(),
+                        speciator.getSpeciesSizeStatisticFunction()
                 ));
 
         tabbedVisualizationWindow.setLocation(10, 10);
