@@ -195,6 +195,8 @@ public class NetworkIndependentProportionalBundler extends AbstractAdaptiveBundl
      * @return a BundleDataHolder instance.
      */
     private BundleDataHolder getDataHolder() {
+        if (job == null)
+            log.warn("Job is null!");
         dataHolders.putIfAbsent(job.getName(), defaultBundleDataHolderSupplier.get());
         return dataHolders.get(job.getName());
     }
