@@ -1,11 +1,12 @@
 package com.marionette.evolver.supermariobros.optimizationfunctions;
 
-import edu.uci.ics.jung.algorithms.layout.FRLayout;
 import org.javaneat.genome.NEATGenome;
 import org.javaneat.visualization.Visualizer;
 import org.jnsgaii.computations.DefaultComputation;
 import org.jnsgaii.population.individual.Individual;
 import org.jnsgaii.properties.Properties;
+
+import edu.uci.ics.jung.algorithms.layout.FRLayout;
 
 /**
  * Created by Mitchell on 6/12/2016.
@@ -15,7 +16,7 @@ public class NEATConnectionCostComputation extends DefaultComputation<NEATGenome
 
     @Override
     public Double computeIndividual(Individual<NEATGenome> individual, Properties properties) {
-        FRLayout<Integer, Visualizer.Edge> layout = Visualizer.getLayout(true, SMBComputation.VISION_SIZE, 6, individual.getIndividual());
+        FRLayout<Long, Visualizer.Edge> layout = Visualizer.getLayout(true, SMBComputation.VISION_SIZE, 6, individual.getIndividual());
 
         double sumSquaredDistance = 0;
         for (Visualizer.Edge edge : layout.getGraph().getEdges())
