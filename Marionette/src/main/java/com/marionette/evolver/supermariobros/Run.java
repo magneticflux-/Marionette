@@ -3,9 +3,14 @@ package com.marionette.evolver.supermariobros;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
-import com.marionette.evolver.supermariobros.optimizationfunctions.*;
+import com.marionette.evolver.supermariobros.optimizationfunctions.MarioBrosData;
+import com.marionette.evolver.supermariobros.optimizationfunctions.SMBComputation;
+import com.marionette.evolver.supermariobros.optimizationfunctions.SMBDistanceFunction;
+import com.marionette.evolver.supermariobros.optimizationfunctions.SMBNoveltyBehaviorList;
+import com.marionette.evolver.supermariobros.optimizationfunctions.SMBNoveltySearch;
 import com.marionette.evolver.supermariobros.optimizationfunctions.keys.NoveltySearchDoubleKey;
 import com.marionette.evolver.supermariobros.optimizationfunctions.keys.NoveltySearchIntKey;
+
 import org.javaneat.evolution.NEATInnovationMap;
 import org.javaneat.evolution.nsgaii.NEATPopulationGenerator;
 import org.javaneat.evolution.nsgaii.NEATRecombiner;
@@ -26,7 +31,6 @@ import org.jnsgaii.operators.Mutator;
 import org.jnsgaii.operators.Recombiner;
 import org.jnsgaii.operators.Selector;
 import org.jnsgaii.population.PopulationData;
-import org.jnsgaii.population.individual.Individual;
 import org.jnsgaii.properties.Key;
 import org.jnsgaii.properties.Properties;
 import org.jnsgaii.visualization.DefaultVisualization;
@@ -37,7 +41,6 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Created by Mitchell on 3/13/2016.
@@ -92,7 +95,7 @@ public final class Run {
         @SuppressWarnings("ConstantConditions")
         SMBNoveltyBehaviorList noveltyBehaviorList = LOAD_FROM_DISK ? (SMBNoveltyBehaviorList) kryo.readClassAndObject(new Input(new FileInputStream("generations/" + GENERATION_TO_LOAD + "_novelty.nbl"))) : new SMBNoveltyBehaviorList();
         @SuppressWarnings("ConstantConditions")
-        NEATPopulationGenerator neatPopulationGenerator = LOAD_FROM_DISK ? NEATPopulationGenerator.createNEATPopulationGenerator(neatInnovationMap, loadedPopulation.getTruncatedPopulation().getPopulation().stream().map(individual -> new Individual<>(individual.getIndividual(), individual.aspects)).collect(Collectors.toList())) : NEATPopulationGenerator.createNEATPopulationGenerator(neatInnovationMap);
+        NEATPopulationGenerator neatPopulationGenerator = LOAD_FROM_DISK ? NEATPopulationGenerator.createNEATPopulationGenerator(neatInnovationMap, loadedPopulation.getTruncatedPopulation()) : NEATPopulationGenerator.createNEATPopulationGenerator(neatInnovationMap);
 
         NEATSpeciator speciator = new NEATSpeciator();
         List<Mutator<NEATGenome>> mutators = Arrays.asList(new NEATWeightMutator(), new NEATEnableGeneMutator(), new NEATLinkAdditionMutator(neatInnovationMap), new NEATLinkSplitMutator(neatInnovationMap));

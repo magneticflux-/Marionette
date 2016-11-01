@@ -37,7 +37,6 @@ import org.jnsgaii.operators.Mutator;
 import org.jnsgaii.operators.Recombiner;
 import org.jnsgaii.operators.Selector;
 import org.jnsgaii.population.PopulationData;
-import org.jnsgaii.population.individual.Individual;
 import org.jnsgaii.properties.Key;
 import org.jnsgaii.properties.Properties;
 import org.jnsgaii.visualization.TabbedVisualizationWindow;
@@ -52,7 +51,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Predicate;
 import java.util.function.ToDoubleFunction;
-import java.util.stream.Collectors;
 
 import javax.swing.WindowConstants;
 
@@ -134,7 +132,7 @@ public class InfiniteMarioRun {
         }) : new SMBNoveltyBehaviorList();
 
         @SuppressWarnings("ConstantConditions")
-        NEATPopulationGenerator neatPopulationGenerator = LOAD_FROM_DISK ? NEATPopulationGenerator.createNEATPopulationGenerator(neatInnovationMap, loadedPopulation.getTruncatedPopulation().getPopulation().stream().map(individual -> new Individual<>(individual.getIndividual(), individual.aspects)).collect(Collectors.toList())) : NEATPopulationGenerator.createNEATPopulationGenerator(neatInnovationMap);
+        NEATPopulationGenerator neatPopulationGenerator = LOAD_FROM_DISK ? NEATPopulationGenerator.createNEATPopulationGenerator(neatInnovationMap, loadedPopulation.getTruncatedPopulation()) : NEATPopulationGenerator.createNEATPopulationGenerator(neatInnovationMap);
 
         NEATSpeciator speciator = new NEATSpeciator();
         List<Mutator<NEATGenome>> mutators = Arrays.asList(new NEATWeightMutator(), new NEATEnableGeneMutator(), new NEATLinkAdditionMutator(neatInnovationMap), new NEATLinkSplitMutator(neatInnovationMap));
