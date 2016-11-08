@@ -1,10 +1,12 @@
 package com.marionette.evolver.supermariobros.optimizationfunctions;
 
+import org.apache.commons.collections4.comparators.ComparableComparator;
 import org.javaneat.genome.NEATGenome;
 import org.jnsgaii.functions.DefaultOptimizationFunction;
 import org.jnsgaii.properties.Key;
 import org.jnsgaii.properties.Properties;
 
+import java.util.Comparator;
 import java.util.HashMap;
 
 /**
@@ -27,8 +29,8 @@ public class SMBDistanceFunction extends DefaultOptimizationFunction<NEATGenome>
     }
 
     @Override
-    public int compare(Double o1, Double o2) {
-        return Double.compare(o1, o2); // Larger is better
+    public Comparator<Double> getComparator() {
+        return ComparableComparator.comparableComparator(); //Higher is better
     }
 
     @Override

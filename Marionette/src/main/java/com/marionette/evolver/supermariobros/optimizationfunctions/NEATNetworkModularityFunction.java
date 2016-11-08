@@ -1,6 +1,7 @@
 package com.marionette.evolver.supermariobros.optimizationfunctions;
 
 import edu.uci.ics.jung.graph.DirectedOrderedSparseMultigraph;
+import org.apache.commons.collections4.comparators.ComparableComparator;
 import org.javaneat.genome.NEATGenome;
 import org.javaneat.phenome.NEATConnection;
 import org.javaneat.phenome.NEATPhenome;
@@ -17,6 +18,7 @@ import org.slm4j.ModularityOptimizer;
 import org.slm4j.Network;
 import org.slm4j.VOSClusteringTechnique;
 
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
@@ -101,8 +103,8 @@ public class NEATNetworkModularityFunction implements OptimizationFunction<NEATG
     }
 
     @Override
-    public int compare(Double o1, Double o2) {
-        return Double.compare(o1, o2); // Larger is better
+    public Comparator<Double> getComparator() {
+        return ComparableComparator.comparableComparator(); //Higher is better
     }
 
     @Override

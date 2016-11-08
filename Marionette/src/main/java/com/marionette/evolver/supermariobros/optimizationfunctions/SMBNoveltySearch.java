@@ -3,6 +3,7 @@ package com.marionette.evolver.supermariobros.optimizationfunctions;
 import com.google.common.collect.Multiset;
 import com.marionette.evolver.supermariobros.optimizationfunctions.keys.NoveltySearchDoubleKey;
 import com.marionette.evolver.supermariobros.optimizationfunctions.keys.NoveltySearchIntKey;
+import org.apache.commons.collections4.comparators.ComparableComparator;
 import org.apache.commons.math3.util.FastMath;
 import org.javaneat.genome.NEATGenome;
 import org.jnsgaii.functions.OptimizationFunction;
@@ -140,8 +141,8 @@ public class SMBNoveltySearch implements OptimizationFunction<NEATGenome> {
     }
 
     @Override
-    public int compare(Double o1, Double o2) {
-        return Double.compare(o1, o2); // Larger is better
+    public Comparator<Double> getComparator() {
+        return ComparableComparator.comparableComparator(); //Higher is better
     }
 
     @Override

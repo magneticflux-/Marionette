@@ -1,11 +1,13 @@
 package com.marionette.evolver.supermariobros.optimizationfunctions;
 
+import org.apache.commons.collections4.comparators.ComparableComparator;
 import org.javaneat.genome.ConnectionGene;
 import org.javaneat.genome.NEATGenome;
 import org.javaneat.genome.NeuronType;
 import org.jnsgaii.functions.DefaultOptimizationFunction;
 import org.jnsgaii.properties.Properties;
 
+import java.util.Comparator;
 import java.util.HashMap;
 
 /**
@@ -35,7 +37,7 @@ public class NEATPhenomeSizeFunction extends DefaultOptimizationFunction<NEATGen
     }
 
     @Override
-    public int compare(Double o1, Double o2) {
-        return -Double.compare(o1, o2); // Smaller is better
+    public Comparator<Double> getComparator() {
+        return ComparableComparator.<Double>comparableComparator().reversed(); //Lower is better
     }
 }

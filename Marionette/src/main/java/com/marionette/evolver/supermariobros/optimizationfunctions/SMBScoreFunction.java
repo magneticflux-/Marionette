@@ -1,11 +1,13 @@
 package com.marionette.evolver.supermariobros.optimizationfunctions;
 
+import org.apache.commons.collections4.comparators.ComparableComparator;
 import org.javaneat.genome.NEATGenome;
 import org.jnsgaii.functions.DefaultOptimizationFunction;
 import org.jnsgaii.population.individual.Individual;
 import org.jnsgaii.properties.Key;
 import org.jnsgaii.properties.Properties;
 
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 
@@ -35,11 +37,6 @@ public class SMBScoreFunction extends DefaultOptimizationFunction<NEATGenome> {
     }
 
     @Override
-    public int compare(Double o1, Double o2) {
-        return Double.compare(o1, o2); // Larger is better
-    }
-
-    @Override
     public double evaluateIndividual(NEATGenome object, HashMap<String, Object> computationResults, Properties properties) {
         MarioBrosData data = (MarioBrosData) computationResults.get(SMBComputation.ID);
         return data.dataPoints.parallelStream().mapToInt(MarioBrosData.DataPoint::getScore).max().orElseGet(() -> -1);
@@ -48,5 +45,10 @@ public class SMBScoreFunction extends DefaultOptimizationFunction<NEATGenome> {
     @Override
     public Key[] requestProperties() {
         return new Key[0];
+    }
+
+    @Override
+    public Comparator<Double> getComparator() {
+        return ComparableComparator.comparableComparator(); // Larger is better
     }
 }
