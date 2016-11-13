@@ -269,7 +269,7 @@ public class InfiniteMarioRun {
 
                             @Override
                             public double[] apply(PopulationData<NEATGenome> populationData) {
-                                return new double[]{populationData.getTruncatedPopulation().getCurrentID()};
+                                return new double[]{populationData.getTruncatedPopulation().getCurrentIndividualID()};
                             }
                         },
                         speciator.getNumSpeciesStatisticFunction(),
