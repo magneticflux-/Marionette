@@ -19,6 +19,7 @@ import org.javaneat.evolution.nsgaii.mutators.NEATLinkSplitMutator;
 import org.javaneat.evolution.nsgaii.mutators.NEATWeightMutator;
 import org.javaneat.genome.ConnectionGene;
 import org.javaneat.genome.NEATGenome;
+import org.javaneat.genome.NeuronType;
 import org.jnsgaii.cluster.computations.JPPFJobComputation;
 import org.jnsgaii.computations.Computation;
 import org.jnsgaii.examples.defaultoperatorframework.RouletteWheelSquareRootSelection;
@@ -74,7 +75,7 @@ public class InfiniteMarioRun {
                 .setValue(Key.DoubleKey.DefaultDoubleKey.ASPECT_MODIFICATION_ARRAY, new double[]{
                         .125 / 4, 1, // Crossover STR
                         .125 / 4, 1, // Crossover PROB
-                        5, 1, // Speciator MAX MATING DISTANCE
+                        .25, 1, // Speciator MAX MATING DISTANCE
                         .125 / 4, 1, // Speciator DISJOINT COEFFICIENT
                         .125 / 4, 1, // Speciator EXCESS COEFFICIENT
                         .125 / 4, 1, // Weight mutation STR
@@ -86,13 +87,13 @@ public class InfiniteMarioRun {
                         .125 / 4, 1, // Link split STR
                         .125 / 4, 1, // Link split PROB
                 })
-                .setInt(Key.IntKey.DefaultIntKey.POPULATION_SIZE, 1000)
+                .setInt(Key.IntKey.DefaultIntKey.POPULATION_SIZE, 500)
                 .setInt(NEATIntKey.INPUT_COUNT, 11 * 11 + 6 + 4 * 3 + 1)
                 .setInt(NEATIntKey.OUTPUT_COUNT, 6)
                 .setInt(NEATIntKey.INITIAL_LINK_COUNT, 10)
                 .setInt(NoveltySearchIntKey.NOVELTY_CACHE_MAX_ENTRIES, 1000)
                 .setDouble(NoveltySearchDoubleKey.NOVELTY_THRESHOLD, 0)
-                .setInt(NoveltySearchIntKey.NOVELTY_DISTANCE_COUNT, 25)
+                .setInt(NoveltySearchIntKey.NOVELTY_DISTANCE_COUNT, 1000)
                 .setInt(NEATIntKey.TARGET_SPECIES, 25);
 
         @SuppressWarnings("ConstantConditions")
@@ -205,9 +206,9 @@ public class InfiniteMarioRun {
             });
             executorService.shutdown();
             try {
-                boolean succeeded = executorService.awaitTermination(5, java.util.concurrent.TimeUnit.MINUTES);
+                boolean succeeded = executorService.awaitTermination(10, java.util.concurrent.TimeUnit.MINUTES);
                 if (!succeeded)
-                    throw new Error();
+                    throw new Error("ExecutorService did not succeed!");
             } catch (InterruptedException e) {
                 throw new Error(e);
             }
@@ -237,14 +238,38 @@ public class InfiniteMarioRun {
                         new TabbedVisualizationWindow.StatisticFunction<NEATGenome>() {
                             @Override
                             public String getName() {
-                                return "Neural Network Size";
+                                return "Number of Neural Connections";
                             }
 
                             @Override
                             public double[] apply(PopulationData<NEATGenome> populationData) {
-                                return populationData.getTruncatedPopulation().getPopulation().stream().mapToDouble(
+                                return populationData.getTruncatedPopulation().getPopulation().parallelStream().mapToDouble(
                                         (ToDoubleFunction<FrontedIndividual<NEATGenome>>) value -> value.getIndividual().getConnectionGeneList().stream()
                                                 .filter(ConnectionGene::getEnabled).count()).toArray();
+                            }
+                        },
+                        new TabbedVisualizationWindow.StatisticFunction<NEATGenome>() {
+                            @Override
+                            public String getName() {
+                                return "Number of Neurons";
+                            }
+
+                            @Override
+                            public double[] apply(PopulationData<NEATGenome> populationData) {
+                                return populationData.getTruncatedPopulation().getPopulation().parallelStream().mapToDouble(
+                                        (ToDoubleFunction<FrontedIndividual<NEATGenome>>) value -> value.getIndividual().getNeuronGeneList().stream()
+                                                .filter(n -> n.getNeuronType() == NeuronType.HIDDEN).count()).toArray();
+                            }
+                        },
+                        new TabbedVisualizationWindow.StatisticFunction<NEATGenome>() {
+                            @Override
+                            public String getName() {
+                                return "Current Max ID";
+                            }
+
+                            @Override
+                            public double[] apply(PopulationData<NEATGenome> populationData) {
+                                return new double[]{populationData.getTruncatedPopulation().getCurrentID()};
                             }
                         },
                         speciator.getNumSpeciesStatisticFunction(),
