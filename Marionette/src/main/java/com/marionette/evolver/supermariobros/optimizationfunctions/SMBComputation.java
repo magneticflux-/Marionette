@@ -4,6 +4,7 @@ import com.grapeshot.halfnes.CPURAM;
 import com.grapeshot.halfnes.PrefsSingleton;
 import com.grapeshot.halfnes.ui.HeadlessUI;
 import com.grapeshot.halfnes.ui.PuppetController;
+
 import org.apache.commons.math3.util.FastMath;
 import org.javaneat.genome.NEATGenome;
 import org.javaneat.phenome.NEATPhenome;
@@ -12,7 +13,7 @@ import org.jnsgaii.population.individual.Individual;
 import org.jnsgaii.properties.Properties;
 
 /**
- * Created by Mitchell on 6/5/2016.
+ * Created by Mitchell Skaggs on 6/5/2016.
  */
 public class SMBComputation extends DefaultComputation<NEATGenome, MarioBrosData> {
     public static final String ID = "SMBComputation";

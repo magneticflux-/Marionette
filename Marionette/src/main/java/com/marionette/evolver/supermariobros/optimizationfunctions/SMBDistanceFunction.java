@@ -10,7 +10,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 
 /**
- * Created by Mitchell on 3/25/2016.
+ * Created by Mitchell Skaggs on 3/25/2016.
  */
 public class SMBDistanceFunction extends DefaultOptimizationFunction<NEATGenome> {
     @Override

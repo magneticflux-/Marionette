@@ -1,14 +1,9 @@
 package com.marionette.evolver.supermariobros;
 
-import ch.idsia.agents.IAgent;
-import ch.idsia.benchmark.mario.engine.generalization.Enemy;
-import ch.idsia.benchmark.mario.engine.input.MarioInput;
-import ch.idsia.benchmark.mario.environments.MarioEnvironment;
-import ch.idsia.benchmark.mario.options.FastOpts;
-import ch.idsia.benchmark.mario.options.MarioOptions;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.marionette.evolver.supermariobros.optimizationfunctions.InfiniteMarioComputation;
+
 import org.javaneat.genome.NEATGenome;
 import org.javaneat.phenome.NEATPhenome;
 import org.jnsgaii.multiobjective.population.FrontedIndividual;
@@ -19,8 +14,15 @@ import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 
+import ch.idsia.agents.IAgent;
+import ch.idsia.benchmark.mario.engine.generalization.Enemy;
+import ch.idsia.benchmark.mario.engine.input.MarioInput;
+import ch.idsia.benchmark.mario.environments.MarioEnvironment;
+import ch.idsia.benchmark.mario.options.FastOpts;
+import ch.idsia.benchmark.mario.options.MarioOptions;
+
 /**
- * Created by Mitchell on 7/28/2016.
+ * Created by Mitchell Skaggs on 7/28/2016.
  */
 public class InfiniteMarioPlayback {
     public static void main(String[] args) throws FileNotFoundException, InterruptedException {

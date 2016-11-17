@@ -1,6 +1,5 @@
 package com.marionette.evolver.supermariobros.optimizationfunctions;
 
-import edu.uci.ics.jung.graph.DirectedOrderedSparseMultigraph;
 import org.apache.commons.collections4.comparators.ComparableComparator;
 import org.javaneat.genome.NEATGenome;
 import org.javaneat.phenome.NEATConnection;
@@ -24,8 +23,10 @@ import java.util.List;
 import java.util.Random;
 import java.util.function.Consumer;
 
+import edu.uci.ics.jung.graph.DirectedOrderedSparseMultigraph;
+
 /**
- * Created by Mitchell on 8/10/2016.
+ * Created by Mitchell Skaggs on 8/10/2016.
  */
 public class NEATNetworkModularityFunction implements OptimizationFunction<NEATGenome> {
     private transient final JPPFClient client;

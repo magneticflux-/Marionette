@@ -6,7 +6,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Created by Mitchell on 6/24/2016.
+ * Created by Mitchell Skaggs on 6/24/2016.
  */
 public class HashMapDataProvider implements DataProvider {
     private final Map<Object, Object> parameters = new HashMap<>();

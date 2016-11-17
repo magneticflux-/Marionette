@@ -5,7 +5,7 @@ import org.jppf.load.balancer.spi.JPPFBundlerProvider;
 import org.jppf.utils.TypedProperties;
 
 /**
- * Created by Mitchell on 9/20/2016.
+ * Created by Mitchell Skaggs on 9/20/2016.
  */
 public class NetworkIndependentProportionalBundlerProvider implements JPPFBundlerProvider<NetworkIndependentProportionalProfile> {
     @Override

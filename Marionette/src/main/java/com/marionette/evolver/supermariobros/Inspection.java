@@ -2,6 +2,7 @@ package com.marionette.evolver.supermariobros;
 
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
+
 import org.javaneat.genome.NEATGenome;
 import org.jnsgaii.population.PopulationData;
 
@@ -9,7 +10,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 
 /**
- * Created by Mitchell on 8/27/2016.
+ * Created by Mitchell Skaggs on 8/27/2016.
  */
 public class Inspection {
     public static void main(String[] args) throws FileNotFoundException {

@@ -9,7 +9,7 @@ import org.jnsgaii.properties.Properties;
 import edu.uci.ics.jung.algorithms.layout.FRLayout;
 
 /**
- * Created by Mitchell on 6/12/2016.
+ * Created by Mitchell Skaggs on 6/12/2016.
  */
 public class NEATConnectionCostComputation extends DefaultComputation<NEATGenome, Double> {
     public static final String ID = "NEATConnectionCostComputation";

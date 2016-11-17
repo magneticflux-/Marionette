@@ -6,7 +6,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Created by Mitchell on 3/24/2016.
+ * Created by Mitchell Skaggs on 3/24/2016.
  */
 public class MarioBrosData implements Serializable {
     final List<DataPoint> dataPoints;

@@ -1,5 +1,18 @@
 package com.marionette.evolver.supermariobros.optimizationfunctions;
 
+import org.apache.commons.math3.util.FastMath;
+import org.javaneat.genome.NEATGenome;
+import org.javaneat.phenome.NEATPhenome;
+import org.jnsgaii.population.individual.Individual;
+import org.jnsgaii.properties.Properties;
+
+import java.awt.Color;
+import java.awt.Graphics;
+import java.awt.geom.Point2D;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import ch.idsia.agents.AgentOptions;
 import ch.idsia.agents.controllers.IMarioDebugDraw;
 import ch.idsia.agents.controllers.MarioAIBase;
@@ -18,21 +31,9 @@ import ch.idsia.benchmark.mario.environments.IEnvironment;
 import ch.idsia.benchmark.mario.environments.MarioEnvironment;
 import ch.idsia.benchmark.mario.options.FastOpts;
 import ch.idsia.benchmark.mario.options.MarioOptions;
-import org.apache.commons.math3.util.FastMath;
-import org.javaneat.genome.NEATGenome;
-import org.javaneat.phenome.NEATPhenome;
-import org.jnsgaii.population.individual.Individual;
-import org.jnsgaii.properties.Properties;
-
-import java.awt.Color;
-import java.awt.Graphics;
-import java.awt.geom.Point2D;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
 
 /**
- * Created by Mitchell on 7/27/2016.
+ * Created by Mitchell Skaggs on 7/27/2016.
  */
 public class InfiniteMarioComputation extends SMBComputation {
     //public static final String ID = "InfiniteMarioComputation";

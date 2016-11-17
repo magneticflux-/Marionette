@@ -4,7 +4,7 @@ import org.jppf.load.balancer.impl.ProportionalProfile;
 import org.jppf.utils.TypedProperties;
 
 /**
- * Created by Mitchell on 9/24/2016.
+ * Created by Mitchell Skaggs on 9/24/2016.
  */
 public class NetworkIndependentProportionalProfile extends ProportionalProfile {
 

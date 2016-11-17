@@ -3,6 +3,7 @@ package com.marionette.evolver.supermariobros.optimizationfunctions;
 import com.google.common.collect.Multiset;
 import com.marionette.evolver.supermariobros.optimizationfunctions.keys.NoveltySearchDoubleKey;
 import com.marionette.evolver.supermariobros.optimizationfunctions.keys.NoveltySearchIntKey;
+
 import org.apache.commons.collections4.comparators.ComparableComparator;
 import org.apache.commons.math3.util.FastMath;
 import org.javaneat.genome.NEATGenome;
@@ -16,10 +17,15 @@ import org.jppf.client.JPPFJob;
 import org.jppf.node.protocol.AbstractTask;
 import org.jppf.node.protocol.Task;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 
 /**
- * Created by Mitchell on 3/25/2016.
+ * Created by Mitchell Skaggs on 3/25/2016.
  */
 public class SMBNoveltySearch implements OptimizationFunction<NEATGenome> {
 

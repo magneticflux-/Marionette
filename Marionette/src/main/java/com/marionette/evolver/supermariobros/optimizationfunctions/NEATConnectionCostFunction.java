@@ -9,7 +9,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 
 /**
- * Created by Mitchell on 6/10/2016.
+ * Created by Mitchell Skaggs on 6/10/2016.
  */
 public class NEATConnectionCostFunction extends DefaultOptimizationFunction<NEATGenome> {
     @Override

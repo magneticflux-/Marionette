@@ -6,6 +6,7 @@ import com.marionette.evolver.supermariobros.optimizationfunctions.NEATNetworkMo
 import com.marionette.evolver.supermariobros.optimizationfunctions.SMBComputation;
 import com.marionette.evolver.supermariobros.optimizationfunctions.SMBDistanceFunction;
 import com.marionette.evolver.supermariobros.optimizationfunctions.SMBNoveltySearch;
+
 import org.javaneat.evolution.NEATInnovationMap;
 import org.javaneat.evolution.nsgaii.NEATRecombiner;
 import org.javaneat.evolution.nsgaii.NEATSpeciator;
@@ -32,7 +33,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 /**
- * Created by Mitchell on 4/14/2016.
+ * Created by Mitchell Skaggs on 4/14/2016.
  */
 public final class GenerationVisualizer {
     private GenerationVisualizer() {

@@ -5,7 +5,7 @@ import com.google.common.collect.LinkedHashMultiset;
 import java.util.Iterator;
 
 /**
- * Created by Mitchell on 6/22/2016.
+ * Created by Mitchell Skaggs on 6/22/2016.
  */
 public class SMBNoveltyBehaviorList {
     private final LinkedHashMultiset<MarioBrosData> behaviorList = LinkedHashMultiset.create();

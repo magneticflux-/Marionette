@@ -3,6 +3,7 @@ package com.marionette.evolver.supermariobros.visualization;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.marionette.evolver.supermariobros.optimizationfunctions.SMBComputation;
+
 import org.javaneat.genome.NEATGenome;
 import org.javaneat.visualization.Visualizer;
 import org.jnsgaii.multiobjective.population.FrontedIndividual;
@@ -14,7 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Created by Mitchell on 4/16/2016.
+ * Created by Mitchell Skaggs on 4/16/2016.
  */
 public final class IndividualVisualizer {
     private IndividualVisualizer() {

@@ -12,7 +12,7 @@ import java.util.HashMap;
 import java.util.List;
 
 /**
- * Created by Mitchell on 3/25/2016.
+ * Created by Mitchell Skaggs on 3/25/2016.
  */
 public class SMBScoreFunction extends DefaultOptimizationFunction<NEATGenome> {
 

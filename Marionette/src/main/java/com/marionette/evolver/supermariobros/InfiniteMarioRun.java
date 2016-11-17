@@ -5,9 +5,16 @@ import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import com.esotericsoftware.kryo.pool.KryoCallback;
 import com.esotericsoftware.kryo.pool.KryoPool;
-import com.marionette.evolver.supermariobros.optimizationfunctions.*;
+import com.marionette.evolver.supermariobros.optimizationfunctions.InfiniteMarioComputation;
+import com.marionette.evolver.supermariobros.optimizationfunctions.MarioBrosData;
+import com.marionette.evolver.supermariobros.optimizationfunctions.NEATNetworkModularityFunction;
+import com.marionette.evolver.supermariobros.optimizationfunctions.SMBComputation;
+import com.marionette.evolver.supermariobros.optimizationfunctions.SMBDistanceFunction;
+import com.marionette.evolver.supermariobros.optimizationfunctions.SMBNoveltyBehaviorList;
+import com.marionette.evolver.supermariobros.optimizationfunctions.SMBNoveltySearch;
 import com.marionette.evolver.supermariobros.optimizationfunctions.keys.NoveltySearchDoubleKey;
 import com.marionette.evolver.supermariobros.optimizationfunctions.keys.NoveltySearchIntKey;
+
 import org.javaneat.evolution.NEATInnovationMap;
 import org.javaneat.evolution.nsgaii.NEATPopulationGenerator;
 import org.javaneat.evolution.nsgaii.NEATRecombiner;
@@ -36,7 +43,6 @@ import org.jnsgaii.properties.Properties;
 import org.jnsgaii.visualization.TabbedVisualizationWindow;
 import org.jppf.client.JPPFClient;
 
-import javax.swing.WindowConstants;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -47,8 +53,10 @@ import java.util.concurrent.Executors;
 import java.util.function.Predicate;
 import java.util.function.ToDoubleFunction;
 
+import javax.swing.WindowConstants;
+
 /**
- * Created by Mitchell on 7/28/2016.
+ * Created by Mitchell Skaggs on 7/28/2016.
  */
 @SuppressWarnings("Duplicates")
 public class InfiniteMarioRun {
