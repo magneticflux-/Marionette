@@ -3,18 +3,13 @@ package com.marionette.evolver.supermariobros;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
-import com.marionette.evolver.supermariobros.optimizationfunctions.MarioBrosData;
-import com.marionette.evolver.supermariobros.optimizationfunctions.SMBComputation;
-import com.marionette.evolver.supermariobros.optimizationfunctions.SMBDistanceFunction;
-import com.marionette.evolver.supermariobros.optimizationfunctions.SMBNoveltyBehaviorList;
-import com.marionette.evolver.supermariobros.optimizationfunctions.SMBNoveltySearch;
+import com.marionette.evolver.supermariobros.optimizationfunctions.*;
 import com.marionette.evolver.supermariobros.optimizationfunctions.keys.NoveltySearchDoubleKey;
 import com.marionette.evolver.supermariobros.optimizationfunctions.keys.NoveltySearchIntKey;
-
 import org.javaneat.evolution.NEATInnovationMap;
 import org.javaneat.evolution.nsgaii.NEATPopulationGenerator;
 import org.javaneat.evolution.nsgaii.NEATRecombiner;
-import org.javaneat.evolution.nsgaii.NEATSpeciator;
+import org.javaneat.evolution.nsgaii.NEATSpeciatorEx;
 import org.javaneat.evolution.nsgaii.keys.NEATIntKey;
 import org.javaneat.evolution.nsgaii.mutators.NEATEnableGeneMutator;
 import org.javaneat.evolution.nsgaii.mutators.NEATLinkAdditionMutator;
@@ -97,11 +92,11 @@ public final class Run {
         @SuppressWarnings("ConstantConditions")
         NEATPopulationGenerator neatPopulationGenerator = LOAD_FROM_DISK ? NEATPopulationGenerator.createNEATPopulationGenerator(neatInnovationMap, loadedPopulation.getTruncatedPopulation()) : NEATPopulationGenerator.createNEATPopulationGenerator(neatInnovationMap);
 
-        NEATSpeciator speciator = new NEATSpeciator();
+        NEATSpeciatorEx speciatorEx = new NEATSpeciatorEx();
         List<Mutator<NEATGenome>> mutators = Arrays.asList(new NEATWeightMutator(), new NEATEnableGeneMutator(), new NEATLinkAdditionMutator(neatInnovationMap), new NEATLinkSplitMutator(neatInnovationMap));
         Recombiner<NEATGenome> recombiner = new NEATRecombiner(neatInnovationMap);
         Selector<NEATGenome> selector = new RouletteWheelSquareRootSelection<>();
-        DefaultOperator<NEATGenome> operator = new DefaultOperator<>(mutators, recombiner, selector, speciator);
+        DefaultOperator<NEATGenome> operator = new DefaultOperator<>(mutators, recombiner, selector, speciatorEx);
 
         @SuppressWarnings("ConstantConditions")
         SMBNoveltySearch noveltySearch = new SMBNoveltySearch(noveltyBehaviorList, client);

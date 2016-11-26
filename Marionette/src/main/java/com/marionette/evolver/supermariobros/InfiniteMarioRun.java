@@ -5,20 +5,13 @@ import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
 import com.esotericsoftware.kryo.pool.KryoCallback;
 import com.esotericsoftware.kryo.pool.KryoPool;
-import com.marionette.evolver.supermariobros.optimizationfunctions.InfiniteMarioComputation;
-import com.marionette.evolver.supermariobros.optimizationfunctions.MarioBrosData;
-import com.marionette.evolver.supermariobros.optimizationfunctions.NEATNetworkModularityFunction;
-import com.marionette.evolver.supermariobros.optimizationfunctions.SMBComputation;
-import com.marionette.evolver.supermariobros.optimizationfunctions.SMBDistanceFunction;
-import com.marionette.evolver.supermariobros.optimizationfunctions.SMBNoveltyBehaviorList;
-import com.marionette.evolver.supermariobros.optimizationfunctions.SMBNoveltySearch;
+import com.marionette.evolver.supermariobros.optimizationfunctions.*;
 import com.marionette.evolver.supermariobros.optimizationfunctions.keys.NoveltySearchDoubleKey;
 import com.marionette.evolver.supermariobros.optimizationfunctions.keys.NoveltySearchIntKey;
-
 import org.javaneat.evolution.NEATInnovationMap;
 import org.javaneat.evolution.nsgaii.NEATPopulationGenerator;
 import org.javaneat.evolution.nsgaii.NEATRecombiner;
-import org.javaneat.evolution.nsgaii.NEATSpeciator;
+import org.javaneat.evolution.nsgaii.NEATSpeciatorEx;
 import org.javaneat.evolution.nsgaii.keys.NEATIntKey;
 import org.javaneat.evolution.nsgaii.mutators.NEATEnableGeneMutator;
 import org.javaneat.evolution.nsgaii.mutators.NEATLinkAdditionMutator;
@@ -43,6 +36,7 @@ import org.jnsgaii.properties.Properties;
 import org.jnsgaii.visualization.TabbedVisualizationWindow;
 import org.jppf.client.JPPFClient;
 
+import javax.swing.WindowConstants;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -50,10 +44,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.function.Predicate;
 import java.util.function.ToDoubleFunction;
-
-import javax.swing.WindowConstants;
 
 /**
  * Created by Mitchell Skaggs on 7/28/2016.
@@ -135,11 +126,11 @@ public class InfiniteMarioRun {
         @SuppressWarnings("ConstantConditions")
         NEATPopulationGenerator neatPopulationGenerator = LOAD_FROM_DISK ? NEATPopulationGenerator.createNEATPopulationGenerator(neatInnovationMap, loadedPopulation.getTruncatedPopulation()) : NEATPopulationGenerator.createNEATPopulationGenerator(neatInnovationMap);
 
-        NEATSpeciator speciator = new NEATSpeciator();
+        NEATSpeciatorEx speciatorEx = new NEATSpeciatorEx();
         List<Mutator<NEATGenome>> mutators = Arrays.asList(new NEATWeightMutator(), new NEATEnableGeneMutator(), new NEATLinkAdditionMutator(neatInnovationMap), new NEATLinkSplitMutator(neatInnovationMap));
         Recombiner<NEATGenome> recombiner = new NEATRecombiner(neatInnovationMap);
         Selector<NEATGenome> selector = new RouletteWheelSquareRootSelection<>();//new RouletteWheelLogarithmicSelection<>();
-        DefaultOperator<NEATGenome> defaultOperator = new DefaultOperator<>(mutators, recombiner, selector, speciator);
+        DefaultOperator<NEATGenome> defaultOperator = new DefaultOperator<>(mutators, recombiner, selector, speciatorEx);
 
         @SuppressWarnings("ConstantConditions")
         SMBNoveltySearch noveltySearch = new SMBNoveltySearch(noveltyBehaviorList, jppfClient);
@@ -167,7 +158,6 @@ public class InfiniteMarioRun {
 
         NSGAII<NEATGenome> nsgaii = new NSGAII<>(properties, defaultOperator, optimizationFunctions, neatPopulationGenerator, GENERATION_TO_LOAD, computations);
 
-        nsgaii.addObserver(speciator);
         nsgaii.addObserver(populationData -> {
             ExecutorService executorService = Executors.newCachedThreadPool();
             executorService.submit(() -> {
@@ -233,19 +223,6 @@ public class InfiniteMarioRun {
                         new TabbedVisualizationWindow.StatisticFunction<NEATGenome>() {
                             @Override
                             public String getName() {
-                                return "Compatible Mates";
-                            }
-
-                            @Override
-                            public double[] apply(PopulationData<NEATGenome> populationData) {
-                                return populationData.getTruncatedPopulation().getPopulation().stream().mapToDouble(
-                                        (ToDoubleFunction<FrontedIndividual<NEATGenome>>) value -> populationData.getTruncatedPopulation().getPopulation().parallelStream().filter(
-                                                (Predicate<FrontedIndividual<NEATGenome>>) neatGenomeFrontedIndividual -> speciator.apply(value, neatGenomeFrontedIndividual)).count()).toArray();
-                            }
-                        },
-                        new TabbedVisualizationWindow.StatisticFunction<NEATGenome>() {
-                            @Override
-                            public String getName() {
                                 return "Number of Neural Connections";
                             }
 
@@ -272,7 +249,7 @@ public class InfiniteMarioRun {
                         new TabbedVisualizationWindow.StatisticFunction<NEATGenome>() {
                             @Override
                             public String getName() {
-                                return "Current Max ID";
+                                return "Current Max Individual ID";
                             }
 
                             @Override
@@ -280,8 +257,17 @@ public class InfiniteMarioRun {
                                 return new double[]{populationData.getTruncatedPopulation().getCurrentIndividualID()};
                             }
                         },
-                        speciator.getNumSpeciesStatisticFunction(),
-                        speciator.getSpeciesSizeStatisticFunction()
+                        new TabbedVisualizationWindow.StatisticFunction<NEATGenome>() {
+                            @Override
+                            public String getName() {
+                                return "Current Max Species ID";
+                            }
+
+                            @Override
+                            public double[] apply(PopulationData<NEATGenome> populationData) {
+                                return new double[]{populationData.getTruncatedPopulation().getCurrentSpeciesID()};
+                            }
+                        }
                 ));
 
         tabbedVisualizationWindow.setLocation(10, 10);

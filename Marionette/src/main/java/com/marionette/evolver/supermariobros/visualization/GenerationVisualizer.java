@@ -6,10 +6,9 @@ import com.marionette.evolver.supermariobros.optimizationfunctions.NEATNetworkMo
 import com.marionette.evolver.supermariobros.optimizationfunctions.SMBComputation;
 import com.marionette.evolver.supermariobros.optimizationfunctions.SMBDistanceFunction;
 import com.marionette.evolver.supermariobros.optimizationfunctions.SMBNoveltySearch;
-
 import org.javaneat.evolution.NEATInnovationMap;
 import org.javaneat.evolution.nsgaii.NEATRecombiner;
-import org.javaneat.evolution.nsgaii.NEATSpeciator;
+import org.javaneat.evolution.nsgaii.NEATSpeciatorEx;
 import org.javaneat.evolution.nsgaii.mutators.NEATEnableGeneMutator;
 import org.javaneat.evolution.nsgaii.mutators.NEATLinkAdditionMutator;
 import org.javaneat.evolution.nsgaii.mutators.NEATLinkSplitMutator;
@@ -40,12 +39,12 @@ public final class GenerationVisualizer {
     }
 
     public static void main(String[] args) {
-        NEATSpeciator neatSpeciator = new NEATSpeciator();
+        NEATSpeciatorEx neatSpeciatorEx = new NEATSpeciatorEx();
         NEATInnovationMap neatInnovationMap = new NEATInnovationMap(-1, -1);
         List<Mutator<NEATGenome>> mutators = Arrays.asList(new NEATWeightMutator(), new NEATEnableGeneMutator(), new NEATLinkAdditionMutator(neatInnovationMap), new NEATLinkSplitMutator(neatInnovationMap));
         Recombiner<NEATGenome> recombiner = new NEATRecombiner(neatInnovationMap);
         Selector<NEATGenome> selector = new RouletteWheelLinearSelection<>();
-        DefaultOperator<NEATGenome> operator = new DefaultOperator<>(mutators, recombiner, selector, neatSpeciator);
+        DefaultOperator<NEATGenome> operator = new DefaultOperator<>(mutators, recombiner, selector, neatSpeciatorEx);
 
         //String[] aspectDescriptions = operator.getAspectDescriptions();
         //String[] scoreDescriptions = {"Novelty", "Distance", "Score", "Speed"};
