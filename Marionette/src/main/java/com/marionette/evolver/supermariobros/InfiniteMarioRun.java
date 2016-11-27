@@ -86,14 +86,14 @@ public class InfiniteMarioRun {
                         .125 / 4, 1, // Link split STR
                         .125 / 4, 1, // Link split PROB
                 })
-                .setInt(Key.IntKey.DefaultIntKey.POPULATION_SIZE, 500)
+                .setInt(Key.IntKey.DefaultIntKey.POPULATION_SIZE, 200)
                 .setInt(NEATIntKey.INPUT_COUNT, 11 * 11 + 6 + 4 * 3 + 1)
                 .setInt(NEATIntKey.OUTPUT_COUNT, 6)
                 .setInt(NEATIntKey.INITIAL_LINK_COUNT, 10)
                 .setInt(NoveltySearchIntKey.NOVELTY_CACHE_MAX_ENTRIES, 1000)
                 .setDouble(NoveltySearchDoubleKey.NOVELTY_THRESHOLD, 0)
                 .setInt(NoveltySearchIntKey.NOVELTY_DISTANCE_COUNT, 1000)
-                .setInt(NEATIntKey.TARGET_SPECIES, 25);
+                .setInt(NEATIntKey.TARGET_SPECIES, 10);
 
         @SuppressWarnings("ConstantConditions")
         PopulationData<NEATGenome> loadedPopulation = LOAD_FROM_DISK ? kryoPool.run(kryo -> {
@@ -249,7 +249,7 @@ public class InfiniteMarioRun {
                         new TabbedVisualizationWindow.StatisticFunction<NEATGenome>() {
                             @Override
                             public String getName() {
-                                return "Current Max Individual ID";
+                                return "Max Individual ID";
                             }
 
                             @Override
@@ -260,12 +260,23 @@ public class InfiniteMarioRun {
                         new TabbedVisualizationWindow.StatisticFunction<NEATGenome>() {
                             @Override
                             public String getName() {
-                                return "Current Max Species ID";
+                                return "Max Species ID";
                             }
 
                             @Override
                             public double[] apply(PopulationData<NEATGenome> populationData) {
                                 return new double[]{populationData.getTruncatedPopulation().getCurrentSpeciesID()};
+                            }
+                        },
+                        new TabbedVisualizationWindow.StatisticFunction<NEATGenome>() {
+                            @Override
+                            public String getName() {
+                                return "Number of Species";
+                            }
+
+                            @Override
+                            public double[] apply(PopulationData<NEATGenome> populationData) {
+                                return new double[]{populationData.getTruncatedPopulation().getSpecies().size()};
                             }
                         }
                 ));
