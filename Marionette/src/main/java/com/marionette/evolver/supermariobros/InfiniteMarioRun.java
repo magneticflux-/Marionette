@@ -65,7 +65,7 @@ public class InfiniteMarioRun {
         Properties properties = new Properties()
                 .setValue(Key.DoubleKey.DefaultDoubleKey.INITIAL_ASPECT_ARRAY, new double[]{
                         .8, 1, // Crossover STR/PROB
-                        25, 1, 1, // Speciator maxd/disj/exce
+                        1.5, 1, 1, // Speciator maxd/disj/exce
                         .2, .9, // Weight mutation
                         .2, .2, // Enable gene mutation
                         1, .4, // Link addition
@@ -74,7 +74,7 @@ public class InfiniteMarioRun {
                 .setValue(Key.DoubleKey.DefaultDoubleKey.ASPECT_MODIFICATION_ARRAY, new double[]{
                         .125 / 4, 1, // Crossover STR
                         .125 / 4, 1, // Crossover PROB
-                        .25, 1, // Speciator MAX MATING DISTANCE
+                        .2, 1, // Speciator MAX MATING DISTANCE
                         .125 / 4, 1, // Speciator DISJOINT COEFFICIENT
                         .125 / 4, 1, // Speciator EXCESS COEFFICIENT
                         .125 / 4, 1, // Weight mutation STR
@@ -86,13 +86,13 @@ public class InfiniteMarioRun {
                         .125 / 4, 1, // Link split STR
                         .125 / 4, 1, // Link split PROB
                 })
-                .setInt(Key.IntKey.DefaultIntKey.POPULATION_SIZE, 200)
+                .setInt(Key.IntKey.DefaultIntKey.POPULATION_SIZE, 1000)
                 .setInt(NEATIntKey.INPUT_COUNT, 11 * 11 + 6 + 4 * 3 + 1)
                 .setInt(NEATIntKey.OUTPUT_COUNT, 6)
                 .setInt(NEATIntKey.INITIAL_LINK_COUNT, 10)
-                .setInt(NoveltySearchIntKey.NOVELTY_CACHE_MAX_ENTRIES, 1000)
+                .setInt(NoveltySearchIntKey.NOVELTY_CACHE_MAX_ENTRIES, 2000)
                 .setDouble(NoveltySearchDoubleKey.NOVELTY_THRESHOLD, 0)
-                .setInt(NoveltySearchIntKey.NOVELTY_DISTANCE_COUNT, 1000)
+                .setInt(NoveltySearchIntKey.NOVELTY_DISTANCE_COUNT, 2000)
                 .setInt(NEATIntKey.TARGET_SPECIES, 10);
 
         @SuppressWarnings("ConstantConditions")
@@ -162,12 +162,9 @@ public class InfiniteMarioRun {
             ExecutorService executorService = Executors.newCachedThreadPool();
             executorService.submit(() -> {
                 try (Output out = new Output(new FileOutputStream("generations/" + populationData.getCurrentGeneration() + "_population.pd"))) {
-                    kryoPool.run(new KryoCallback<Void>() {
-                        @Override
-                        public Void execute(Kryo kryo) {
-                            kryo.writeClassAndObject(out, populationData);
-                            return null;
-                        }
+                    kryoPool.run((KryoCallback<Void>) kryo -> {
+                        kryo.writeClassAndObject(out, populationData);
+                        return null;
                     });
                     out.close();
                 } catch (FileNotFoundException e) {
@@ -176,12 +173,9 @@ public class InfiniteMarioRun {
             });
             executorService.submit(() -> {
                 try (Output out = new Output(new FileOutputStream("generations/" + populationData.getCurrentGeneration() + "_novelty.nbl"))) {
-                    kryoPool.run(new KryoCallback<Void>() {
-                        @Override
-                        public Void execute(Kryo kryo) {
-                            kryo.writeClassAndObject(out, noveltyBehaviorList);
-                            return null;
-                        }
+                    kryoPool.run((KryoCallback<Void>) kryo -> {
+                        kryo.writeClassAndObject(out, noveltyBehaviorList);
+                        return null;
                     });
                     out.close();
                 } catch (FileNotFoundException e) {
@@ -190,12 +184,10 @@ public class InfiniteMarioRun {
             });
             executorService.submit(() -> {
                 try (Output out = new Output(new FileOutputStream("generations/" + populationData.getCurrentGeneration() + "_innovations.nim"))) {
-                    kryoPool.run(new KryoCallback<Void>() {
-                        @Override
-                        public Void execute(Kryo kryo) {
-                            kryo.writeClassAndObject(out, neatInnovationMap);
-                            return null;
-                        }
+                    kryoPool.run((KryoCallback<Void>) kryo -> {
+
+                        kryo.writeClassAndObject(out, neatInnovationMap);
+                        return null;
                     });
                     out.close();
                 } catch (FileNotFoundException e) {
@@ -246,6 +238,7 @@ public class InfiniteMarioRun {
                                                 .filter(n -> n.getNeuronType() == NeuronType.HIDDEN).count()).toArray();
                             }
                         },
+                        /*
                         new TabbedVisualizationWindow.StatisticFunction<NEATGenome>() {
                             @Override
                             public String getName() {
@@ -256,7 +249,8 @@ public class InfiniteMarioRun {
                             public double[] apply(PopulationData<NEATGenome> populationData) {
                                 return new double[]{populationData.getTruncatedPopulation().getCurrentIndividualID()};
                             }
-                        },
+                        },*/
+                        /*
                         new TabbedVisualizationWindow.StatisticFunction<NEATGenome>() {
                             @Override
                             public String getName() {
@@ -267,7 +261,7 @@ public class InfiniteMarioRun {
                             public double[] apply(PopulationData<NEATGenome> populationData) {
                                 return new double[]{populationData.getTruncatedPopulation().getCurrentSpeciesID()};
                             }
-                        },
+                        },*/
                         new TabbedVisualizationWindow.StatisticFunction<NEATGenome>() {
                             @Override
                             public String getName() {
@@ -279,7 +273,8 @@ public class InfiniteMarioRun {
                                 return new double[]{populationData.getTruncatedPopulation().getSpecies().size()};
                             }
                         }
-                ));
+                ))
+                .addSpeciesTab(nsgaii);
 
         tabbedVisualizationWindow.setLocation(10, 10);
         tabbedVisualizationWindow.setSize(900, 900);
