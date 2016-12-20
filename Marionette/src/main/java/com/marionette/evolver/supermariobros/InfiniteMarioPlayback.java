@@ -32,7 +32,7 @@ public class InfiniteMarioPlayback {
         Kryo kryo = new Kryo();
         UnmodifiableCollectionsSerializer.registerSerializers(kryo);
 
-        Input in = new Input(new FileInputStream("generations/47_population.pd"));
+        Input in = new Input(new FileInputStream("generations/93_population.pd"));
         @SuppressWarnings("unchecked")
         PopulationData<NEATGenome> populationData = (PopulationData<NEATGenome>) kryo.readClassAndObject(in);
         in.close();

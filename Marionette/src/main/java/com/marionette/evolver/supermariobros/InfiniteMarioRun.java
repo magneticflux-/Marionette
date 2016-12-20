@@ -52,8 +52,8 @@ import java.util.function.ToDoubleFunction;
  */
 @SuppressWarnings("Duplicates")
 public class InfiniteMarioRun {
-    private static final int GENERATION_TO_LOAD = 0;
-    private static final boolean LOAD_FROM_DISK = false;
+    private static final int GENERATION_TO_LOAD = 98;
+    private static final boolean LOAD_FROM_DISK = true;
 
     private InfiniteMarioRun() {
     }
