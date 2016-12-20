@@ -17,17 +17,6 @@ public class MarioBrosData implements Serializable {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        MarioBrosData data = (MarioBrosData) o;
-
-        return dataPoints.equals(data.dataPoints);
-
-    }
-
-    @Override
     public int hashCode() {
         return dataPoints.hashCode();
     }
@@ -37,23 +26,24 @@ public class MarioBrosData implements Serializable {
     }
 
     public int getLastDistance() {
-        return dataPoints.get(dataPoints.size() - 1).getMarioX();
+        return getLastDataPoint().getMarioX();
+    }
+
+    public DataPoint getLastDataPoint() {
+        return dataPoints.get(dataPoints.size() - 1);
     }
 
     public int getLastScore() {
-        return dataPoints.get(dataPoints.size() - 1).getScore();
+        return getLastDataPoint().getScore();
     }
 
     public int getMaxScore() {
         return dataPoints.stream().mapToInt(DataPoint::getScore).max().orElseThrow(Error::new);
     }
 
-    @Override
-    public String toString() {
-        return dataPoints.toString();
-    }
-
     public void addDataPoint(DataPoint dataPoint) {
+        if (SMBNoveltySearch.FAST_NOVELTY_CALC)
+            this.dataPoints.clear();
         this.dataPoints.add(dataPoint);
     }
 
@@ -70,23 +60,7 @@ public class MarioBrosData implements Serializable {
         }
 
         public DataPoint(DataPoint dataPoint) {
-            this.values = Arrays.copyOf(dataPoint.values, 8);
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            DataPoint dataPoint = (DataPoint) o;
-
-            return Arrays.equals(values, dataPoint.values);
-
-        }
-
-        @Override
-        public int hashCode() {
-            return Arrays.hashCode(values);
+            this.values = Arrays.copyOf(dataPoint.values, 4);
         }
 
         public int getScore() {
@@ -104,5 +78,43 @@ public class MarioBrosData implements Serializable {
         public int getMarioState() {
             return values[3];
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            DataPoint dataPoint = (DataPoint) o;
+
+            return Arrays.equals(values, dataPoint.values);
+
+        }
+
+
+        @Override
+        public int hashCode() {
+            return Arrays.hashCode(values);
+        }
+
+
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        MarioBrosData data = (MarioBrosData) o;
+
+        return dataPoints.equals(data.dataPoints);
+
+    }
+
+
+    @Override
+    public String toString() {
+        return dataPoints.toString();
+    }
+
+
 }

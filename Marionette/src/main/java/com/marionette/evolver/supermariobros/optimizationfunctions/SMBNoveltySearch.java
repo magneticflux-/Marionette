@@ -3,7 +3,6 @@ package com.marionette.evolver.supermariobros.optimizationfunctions;
 import com.google.common.collect.Multiset;
 import com.marionette.evolver.supermariobros.optimizationfunctions.keys.NoveltySearchDoubleKey;
 import com.marionette.evolver.supermariobros.optimizationfunctions.keys.NoveltySearchIntKey;
-
 import org.apache.commons.collections4.comparators.ComparableComparator;
 import org.apache.commons.math3.util.FastMath;
 import org.javaneat.genome.NEATGenome;
@@ -17,12 +16,7 @@ import org.jppf.client.JPPFJob;
 import org.jppf.node.protocol.AbstractTask;
 import org.jppf.node.protocol.Task;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 /**
  * Created by Mitchell Skaggs on 3/25/2016.
@@ -30,6 +24,7 @@ import java.util.List;
 public class SMBNoveltySearch implements OptimizationFunction<NEATGenome> {
 
     public static final String NOVELTY_BEHAVIOR_LIST_KEY = "noveltyBehaviorList";
+    public static final boolean FAST_NOVELTY_CALC = true;
     private transient final SMBNoveltyBehaviorList noveltyBehaviorList;
     private transient final JPPFClient client;
 
@@ -41,29 +36,6 @@ public class SMBNoveltySearch implements OptimizationFunction<NEATGenome> {
     private SMBNoveltySearch() {
         noveltyBehaviorList = new SMBNoveltyBehaviorList();
         client = null;
-    }
-
-    private static double getDistance(MarioBrosData data1, MarioBrosData data2) {
-        double sum = 0;
-
-        MarioBrosData.DataPoint dataPoint1 = null, dataPoint2 = null;
-        Iterator<MarioBrosData.DataPoint> dataPointIterator1 = data1.dataPoints.iterator(), dataPointIterator2 = data2.dataPoints.iterator();
-
-        while (dataPointIterator1.hasNext() || dataPointIterator2.hasNext()) {
-            if (dataPointIterator1.hasNext())
-                dataPoint1 = dataPointIterator1.next();
-            if (dataPointIterator2.hasNext())
-                dataPoint2 = dataPointIterator2.next();
-
-            assert dataPoint1 != null && dataPoint2 != null;
-
-            sum += FastMath.pow(dataPoint1.getScore() - dataPoint2.getScore(), 2);
-            sum += FastMath.pow(dataPoint1.getMarioX() - dataPoint2.getMarioX(), 2);
-            sum += FastMath.pow(dataPoint1.getMarioY() - dataPoint2.getMarioY(), 2);
-            sum += FastMath.pow(dataPoint1.getMarioState() - dataPoint2.getMarioState(), 2);
-        }
-
-        return FastMath.sqrt(sum);
     }
 
     @Override
@@ -131,6 +103,35 @@ public class SMBNoveltySearch implements OptimizationFunction<NEATGenome> {
         return scores;
     }
 
+    private static double getDistance(MarioBrosData data1, MarioBrosData data2) {
+        if (FAST_NOVELTY_CALC) {
+            return FastMath.sqrt(
+                    FastMath.pow(data1.getLastDataPoint().getMarioX() - data2.getLastDataPoint().getMarioX(), 2)
+                            + FastMath.pow(data1.getLastDataPoint().getMarioY() - data2.getLastDataPoint().getMarioY(), 2));
+        } else {
+            double sum = 0;
+
+            MarioBrosData.DataPoint dataPoint1 = null, dataPoint2 = null;
+            Iterator<MarioBrosData.DataPoint> dataPointIterator1 = data1.dataPoints.iterator(), dataPointIterator2 = data2.dataPoints.iterator();
+
+            while (dataPointIterator1.hasNext() || dataPointIterator2.hasNext()) {
+                if (dataPointIterator1.hasNext())
+                    dataPoint1 = dataPointIterator1.next();
+                if (dataPointIterator2.hasNext())
+                    dataPoint2 = dataPointIterator2.next();
+
+                assert dataPoint1 != null && dataPoint2 != null;
+
+                sum += FastMath.pow(dataPoint1.getScore() - dataPoint2.getScore(), 2);
+                sum += FastMath.pow(dataPoint1.getMarioX() - dataPoint2.getMarioX(), 2);
+                sum += FastMath.pow(dataPoint1.getMarioY() - dataPoint2.getMarioY(), 2);
+                sum += FastMath.pow(dataPoint1.getMarioState() - dataPoint2.getMarioState(), 2);
+            }
+
+            return FastMath.sqrt(sum);
+        }
+    }
+
     @Override
     public double min(Properties properties) {
         return 0;
@@ -138,7 +139,7 @@ public class SMBNoveltySearch implements OptimizationFunction<NEATGenome> {
 
     @Override
     public double max(Properties properties) {
-        return 4000;
+        return 1000;
     }
 
     @Override
