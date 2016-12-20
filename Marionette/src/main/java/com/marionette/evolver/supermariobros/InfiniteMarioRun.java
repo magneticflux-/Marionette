@@ -8,6 +8,7 @@ import com.esotericsoftware.kryo.pool.KryoPool;
 import com.marionette.evolver.supermariobros.optimizationfunctions.*;
 import com.marionette.evolver.supermariobros.optimizationfunctions.keys.NoveltySearchDoubleKey;
 import com.marionette.evolver.supermariobros.optimizationfunctions.keys.NoveltySearchIntKey;
+import de.javakaffee.kryoserializers.UnmodifiableCollectionsSerializer;
 import org.javaneat.evolution.NEATInnovationMap;
 import org.javaneat.evolution.nsgaii.NEATPopulationGenerator;
 import org.javaneat.evolution.nsgaii.NEATRecombiner;
@@ -59,7 +60,11 @@ public class InfiniteMarioRun {
 
     public static void main(String[] args) throws FileNotFoundException {
         JPPFClient jppfClient = new JPPFClient();//"Marionette");
-        KryoPool kryoPool = new KryoPool.Builder(Kryo::new).build();
+        KryoPool kryoPool = new KryoPool.Builder(() -> {
+            Kryo kryo = new Kryo();
+            UnmodifiableCollectionsSerializer.registerSerializers(kryo);
+            return kryo;
+        }).build();
 
         //noinspection MagicNumber
         Properties properties = new Properties()
@@ -90,9 +95,9 @@ public class InfiniteMarioRun {
                 .setInt(NEATIntKey.INPUT_COUNT, 11 * 11 + 6 + 4 * 3 + 1)
                 .setInt(NEATIntKey.OUTPUT_COUNT, 6)
                 .setInt(NEATIntKey.INITIAL_LINK_COUNT, 10)
-                .setInt(NoveltySearchIntKey.NOVELTY_CACHE_MAX_ENTRIES, 2000)
+                .setInt(NoveltySearchIntKey.NOVELTY_CACHE_MAX_ENTRIES, 10000)
                 .setDouble(NoveltySearchDoubleKey.NOVELTY_THRESHOLD, 0)
-                .setInt(NoveltySearchIntKey.NOVELTY_DISTANCE_COUNT, 2000)
+                .setInt(NoveltySearchIntKey.NOVELTY_DISTANCE_COUNT, 100)
                 .setInt(NEATIntKey.TARGET_SPECIES, 10);
 
         @SuppressWarnings("ConstantConditions")

@@ -1,9 +1,15 @@
 package com.marionette.evolver.supermariobros;
 
+import ch.idsia.agents.IAgent;
+import ch.idsia.benchmark.mario.engine.generalization.Enemy;
+import ch.idsia.benchmark.mario.engine.input.MarioInput;
+import ch.idsia.benchmark.mario.environments.MarioEnvironment;
+import ch.idsia.benchmark.mario.options.FastOpts;
+import ch.idsia.benchmark.mario.options.MarioOptions;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.marionette.evolver.supermariobros.optimizationfunctions.InfiniteMarioComputation;
-
+import de.javakaffee.kryoserializers.UnmodifiableCollectionsSerializer;
 import org.javaneat.genome.NEATGenome;
 import org.javaneat.phenome.NEATPhenome;
 import org.jnsgaii.multiobjective.population.FrontedIndividual;
@@ -13,13 +19,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
-
-import ch.idsia.agents.IAgent;
-import ch.idsia.benchmark.mario.engine.generalization.Enemy;
-import ch.idsia.benchmark.mario.engine.input.MarioInput;
-import ch.idsia.benchmark.mario.environments.MarioEnvironment;
-import ch.idsia.benchmark.mario.options.FastOpts;
-import ch.idsia.benchmark.mario.options.MarioOptions;
 
 /**
  * Created by Mitchell Skaggs on 7/28/2016.
@@ -31,8 +30,9 @@ public class InfiniteMarioPlayback {
         MarioOptions.reset(true, options);
 
         Kryo kryo = new Kryo();
+        UnmodifiableCollectionsSerializer.registerSerializers(kryo);
 
-        Input in = new Input(new FileInputStream("generations/200_population.pd"));
+        Input in = new Input(new FileInputStream("generations/47_population.pd"));
         @SuppressWarnings("unchecked")
         PopulationData<NEATGenome> populationData = (PopulationData<NEATGenome>) kryo.readClassAndObject(in);
         in.close();

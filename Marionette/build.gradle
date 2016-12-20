@@ -44,6 +44,7 @@ dependencies {
     compile 'org.apache.commons:commons-lang3:3.4'
     compile 'org.apache.commons:commons-collections4:4.0'
     compile 'com.esotericsoftware:kryo:4.0.0' // Breaks neural network saves prior to 8/10/2016
+    compile 'de.javakaffee:kryo-serializers:0.41'
     compile 'org.jfree:jfreechart:1.0.19'
     compile group: 'com.google.guava', name: 'guava', version: '19.0'
     //compile 'org.encog:encog-core:3.3.0'
